@@ -13,6 +13,7 @@ const store = usePathStore();
             <tr>
               <th>Tick</th>
               <th>Name</th>
+              <th>Path</th>
               <th>Created at</th>
               <th>Last modified</th>
               <th>Type</th>
@@ -23,10 +24,11 @@ const store = usePathStore();
             <tr
               v-for="(item, index) in props.items"
               :key="index"
-              @click="store.access_dir(item.path)"
+              @click="store.access_dir(item.path, item.file_type)"
             >
               <td><input type="checkbox" /></td>
               <td>{{ item.name }}</td>
+              <td>{{ item.path }}</td>
               <td>{{ item.created_at }}</td>
               <td>{{ item.last_modified }}</td>
               <td>{{ item.type }}</td>

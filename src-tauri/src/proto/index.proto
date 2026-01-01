@@ -1,0 +1,30 @@
+syntax = "proto3";
+package file_manager.index;
+message VocabEntry{
+  string trigram=1;
+  uint64 postings_offset = 2;
+  uint64 postings_length =3;
+}
+
+message Vocab{
+  repeated VocabEntry entries =1;
+}
+message Posting {
+  uint64 doc_id = 1;
+}
+
+message InvertedIndex{
+ repeated Posting postings =1;
+}
+message DocumentInfo{
+  string path=1;
+}
+message DocumentStore {
+  repeated DocumentInfo docs = 1;
+}
+
+message Metadata{
+  uint64 total_documents = 1;
+  uint64 total_unique_trigrams = 2;
+  string build_time = 3;
+}

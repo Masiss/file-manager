@@ -2,6 +2,8 @@
 import { ref, shallowRef, watch, computed } from 'vue';
 import { usePathStore } from './store/path.js';
 import { storeToRefs } from 'pinia';
+import { invoke } from '@tauri-apps/api/core';
+import SideBar from './components/SideBar.vue';
 const store = usePathStore();
 const items = ref([]);
 const view = shallowRef('');
@@ -14,21 +16,28 @@ watch(
   },
   { immediate: true },
 );
+const input = ref('');
+const search = async () => {
+  items.value = await store.search(input.value.value);
+  view.value = getView.value;
+};
 </script>
 
 <template>
-  <main class="container">
-    <button width="100%" type="button" @click="store.$reset()">Reset</button>
+  <nav class="container">
     <div>
-      <div>
-        <button @click="store.navigate_back()"><</button>
-        <button @click="store.navigate_forward()">></button>
-      </div>
-      <div>
-        <input type="text" placeholder="Search ... " />
-      </div>
+      <button @click="store.navigate_back()"><</button>
+      <button @click="store.navigate_forward()">></button>
     </div>
-    <component :is="view" :items="items" />
+    <div>
+      <input ref="input" type="text" placeholder="Search ... " />
+      <button @click="search()" type="button">seach</button>
+    </div>
+  </nav>
+  <main>
+    <SideBar></SideBar>
+    <!-- <button width="100%" type="button" @click="store.$reset()">Reset</button> -->
+    <component class="container content" :is="view" :items="items" />
   </main>
 </template>
 

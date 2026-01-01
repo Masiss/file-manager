@@ -11,6 +11,14 @@ node_modules
 dist
 dist-ssr
 *.local
+build
+pkg
+target/
+.env.local
+.env.*.local
+.cargo/config.toml # Local cargo configuration
+src-tauri/target/
+tauri.conf.json.bak
 
 # Editor directories and files
 .vscode/*

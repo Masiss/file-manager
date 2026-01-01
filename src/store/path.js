@@ -37,10 +37,24 @@ export const usePathStore = defineStore('current-path', () => {
     path_index.value = 0;
     path_list.value = [];
   }
-  function access_dir(path) {
-    current_path.value = path;
-    path_list.value.push(path);
-    path_index.value += 1;
+  async function search(input) {
+    let items = [];
+    if (!input) {
+      return items;
+    }
+    items = await invoke('search', { input });
+    console.log(items);
+    view.value = DirectoryView;
+    return JSON.parse(items);
+  }
+  function access_dir(path, type) {
+    if (type === 'File') {
+      invoke('open_file', { path });
+    } else {
+      current_path.value = path;
+      path_list.value.push(path);
+      path_index.value += 1;
+    }
   }
   async function load_file() {
     let items = [];
@@ -57,6 +71,7 @@ export const usePathStore = defineStore('current-path', () => {
   return {
     access_dir,
     getView,
+    search,
     load_file,
     $reset,
     current_path,
