@@ -2,8 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod commands;
 use crate::commands::{
+    config::builder::generate_config,
     fs::{directory, disk},
-    search::trigram::{self, generate_config, generate_index},
+    search::trigram::{builder::generate_index, search::search},
+    utils::check_path,
 };
 
 use tauri::ipc::Invoke;
@@ -12,9 +14,12 @@ fn all_commands() -> fn(Invoke) -> bool {
         disk::load_disk,
         directory::load_file,
         directory::open_file,
-        trigram::generate_index,
-        trigram::search,
-        trigram::generate_config
+        directory::load_metadata,
+        directory::load_path,
+        generate_index,
+        search,
+        generate_config,
+        check_path
     ]
 }
 fn main() {

@@ -2,7 +2,10 @@
 import { usePathStore } from '../store/path';
 const props = defineProps(['items']);
 const store = usePathStore();
-console.log(typeof props.items);
+console.log(props.items);
+props.items?.forEach((disk) => {
+  disk.usage = disk.total_space - disk.available_space;
+});
 </script>
 <template>
   <div>

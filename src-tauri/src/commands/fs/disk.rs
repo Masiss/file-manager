@@ -1,17 +1,19 @@
 use serde::{Deserialize, Serialize};
 use sysinfo::{Disks, System};
+
+use crate::commands::error::Error;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Disk {
     name: String,
     available_space: u64,
     mount_point: String,
     is_removable: bool,
-    usage: u64,
     total_space: u64,
     kind: String,
+    path: String,
 }
 #[tauri::command]
-pub fn load_disk() -> String {
+pub fn load_disk() -> Result<String, Error> {
     let mut sys = System::new_all();
     sys.refresh_all();
     let disks = Disks::new_with_refreshed_list();
@@ -23,8 +25,8 @@ pub fn load_disk() -> String {
             available_space: disk.available_space(),
             mount_point: String::from(disk.mount_point().to_string_lossy()),
             is_removable: disk.is_removable(),
-            usage: disk.usage().total_read_bytes,
             total_space: disk.total_space(),
+            path: String::from(disk.mount_point().to_string_lossy()),
         });
         // println!("==============");
         // println!("Disk: {}", disk.name().to_string_lossy());
@@ -38,5 +40,6 @@ pub fn load_disk() -> String {
         // println!("File system: {:?}", disk.file_system());
     }
 
-    serde_json::to_string(&list_disk).unwrap()
+    let encoded = serde_json::to_string(&list_disk)?;
+    Ok(encoded)
 }

@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { defineStore } from 'pinia';
 import { computed, ref, shallowRef } from 'vue';
 import DiskView from '../views/DiskView.vue';
-import DirectoryView from '../views/DirectoryView.vue';
+import DirectoryView from '../views/Directory/DirectoryView.vue';
 
 export const usePathStore = defineStore('current-path', () => {
   const current_path = ref('');
@@ -31,6 +31,7 @@ export const usePathStore = defineStore('current-path', () => {
     console.log(path_list.value[path_index.value]);
   }
   const getView = computed(() => view.value);
+
   function $reset() {
     current_path.value = '';
     view.value = '';
@@ -43,7 +44,6 @@ export const usePathStore = defineStore('current-path', () => {
       return items;
     }
     items = await invoke('search', { input });
-    console.log(items);
     view.value = DirectoryView;
     return JSON.parse(items);
   }
@@ -67,12 +67,34 @@ export const usePathStore = defineStore('current-path', () => {
     }
     return JSON.parse(items);
   }
+  async function load_path(path) {
+    let items;
+    if (!path) {
+      if (current_path.value) {
+        view.value = DirectoryView;
+        items = await invoke('load_path', { currentPath: current_path.value });
+      } else {
+        view.value = DiskView;
+        items = await invoke('load_disk');
+      }
+    } else {
+      items = await invoke('load_path', { currentPath: path });
+    }
+    return JSON.parse(items);
+  }
+  async function load_metadata(path) {
+    let path_array = [...path];
+    let items = await invoke('load_metadata', { pathList: path_array });
+    return JSON.parse(items);
+  }
 
   return {
     access_dir,
     getView,
     search,
     load_file,
+    load_path,
+    load_metadata,
     $reset,
     current_path,
     navigate_back,

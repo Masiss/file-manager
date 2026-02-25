@@ -928,6 +928,7 @@ dependencies = [
 name = "file-manager"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "dirs",
  "open",
@@ -940,6 +941,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "thiserror 2.0.17",
  "toml 0.9.10+spec-1.1.0",
  "walkdir",
 ]
