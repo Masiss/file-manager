@@ -30,7 +30,9 @@
   --cyan-color: var(--sky);
   --yellow-color: var(--yellow);
 }
+
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
   font-size: 15px;
@@ -40,8 +42,14 @@
   scrollbar-width: thin;
   list-style: none;
 }
+html,
+body {
+  background: var(--main-background-transparent);
+  margin: 0;
+}
 #app {
-  background-color: var(--main-background-transparent);
+  background: transparent;
+  color: var(--main-text);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -49,8 +57,11 @@
   height: 100vh;
 }
 #app > * {
-  background-color: var(--dark-background);
+  background-color: var(--bg-base);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
+
 a,
 li,
 p,
@@ -65,9 +76,6 @@ h2 {
   font-size: 14px;
   font-weight: 500;
 }
-table {
-  overflow: scroll;
-}
 .text-bold {
   font-weight: 400;
 }
@@ -79,9 +87,7 @@ table {
   overflow: hidden;
 }
 .layout_browser {
-  flex: 1;
   min-height: 0;
-  overflow-y: auto;
   height: 100%;
 }
 .layout_header {
@@ -94,14 +100,22 @@ table {
   justify-content: space-between;
   align-content: center;
   align-items: center;
+  background: var(--bg-crust);
 }
+.layout_header,
+.layout_sidebar,
+.layout_main {
+}
+
 .layout_sidebar {
   width: calc(8% - 10px);
   min-width: 100px;
   height: 90vh;
   position: sticky;
-  overflow-y: auto;
+  overflow: auto;
   flex-shrink: 0;
+  background: var(--bg-mantle);
+  border-right: 1px solid var(--border-rgb);
 }
 .container {
   border: 0.75px solid gray;

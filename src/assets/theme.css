@@ -1,0 +1,31 @@
+/* Import toàn bộ 4 flavors */
+@import '@catpuccin\palette\css\catpuccin.css';
+
+[data-theme='mocha'] {
+  /* Màu solid như bình thường */
+  --text: var(--ctp-mocha-text);
+  --text-sub: var(--ctp-mocha-subtext1);
+  --accent: var(--ctp-mocha-blue);
+  --border: var(--ctp-mocha-surface1);
+
+  /* Transparent versions — dùng rgba trực tiếp vì CSS variable không hỗ trợ alpha trực tiếp */
+  --bg-base: rgba(30, 30, 46, 0.9); /* mocha base #1e1e2e */
+  --bg-mantle: rgba(24, 24, 37, 0.75); /* mocha mantle #181825 */
+  --bg-crust: rgba(17, 17, 27, 0.7); /* mocha crust #11111b */
+  --bg-surface0: rgba(49, 50, 68, 0.6); /* hover */
+  --bg-surface1: rgba(69, 71, 90, 0.7); /* selected */
+  --border-rgb: rgba(69, 71, 90, 0.4); /* border nhẹ hơn */
+}
+
+[data-theme='latte'] {
+  --text: var(--ctp-latte-text);
+  --text-sub: var(--ctp-latte-subtext1);
+  --accent: var(--ctp-latte-blue);
+
+  --bg-base: rgba(239, 241, 245, 0.8); /* latte base #eff1f5 */
+  --bg-mantle: rgba(230, 233, 239, 0.7); /* latte mantle #e6e9ef */
+  --bg-crust: rgba(220, 224, 232, 0.65); /* latte crust #dce0e8 */
+  --bg-surface0: rgba(204, 208, 218, 0.6);
+  --bg-surface1: rgba(188, 192, 204, 0.7);
+  --border-rgb: rgba(188, 192, 204, 0.4);
+}

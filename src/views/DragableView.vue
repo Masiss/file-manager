@@ -2,7 +2,6 @@
 import { ref, onMounted, provide, watch, nextTick } from 'vue';
 const is_dragging = ref(false);
 const draggable_container = ref(null);
-const draggable_container_rect = ref(null);
 const box = ref(null);
 const box_style = ref({});
 let box_start = { x: 0, y: 0 };
@@ -99,32 +98,42 @@ const intersections = () => {
     }
   });
 };
-onMounted(() => {
-  draggable_container_rect.value =
-    draggable_container.value.getBoundingClientRect();
-});
 provide('itemsRect', {
   register,
 });
+
+const scrollInfo = ref({
+  scrollTop: draggable_container.value?.scrollTop,
+  clientHeight: draggable_container.value?.clientHeight,
+  scrollHeight: draggable_container.value?.scrollHeight,
+});
+const handleOnScroll = (e) => {
+  let { scrollTop, clientHeight, scrollHeight } = e.target;
+
+  scrollInfo.value = { scrollTop, clientHeight, scrollHeight };
+  console.log(scrollInfo.value);
+};
+provide('scrollInfo', { scrollInfo });
 </script>
 <template>
   <div
+    @scroll="handleOnScroll"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
     @mousemove="handleMouseMove"
     class="draggable-container"
     ref="draggable_container"
   >
-    <slot />
+    <slot></slot>
   </div>
   <div v-if="is_dragging" :style="box_style" ref="box" class="drag-box"></div>
 </template>
 <style>
-.view-wrapper {
-  border: 0;
-  width: 100%;
-  height: 100%;
-}
+/* .view-wrapper { */
+/*   border: 0; */
+/*   width: 100%; */
+/*   height: 100%; */
+/* } */
 .drag-box {
   position: absolute;
   background-color: blue;
@@ -133,6 +142,7 @@ provide('itemsRect', {
   pointer-events: none;
 }
 .draggable-container {
+  scroll-behavior: smooth;
   position: relative;
   overflow: auto;
   user-select: none;

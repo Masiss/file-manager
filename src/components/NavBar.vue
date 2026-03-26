@@ -1,118 +1,82 @@
 <script setup>
 import { usePathStore } from '../store/path.js';
-import { computed, ref, toRefs, nextTick, onMounted } from 'vue';
+import { onMounted, onUnmounted, useTemplateRef, computed } from 'vue';
 import Icon from './Icon.vue';
-import { path } from '@tauri-apps/api';
-import { invoke } from '@tauri-apps/api/core';
+import { useBreadCrumb } from './breadcrumb.js';
 const store = usePathStore();
-const emits = defineEmits(['search']);
 
-const input = ref('');
+const input = useTemplateRef('searchInput');
 const search = async () => {
-  let items = [];
-  items = await store.search(input.value.value);
-  emits('search', items);
+  await store.search(input.value.value);
 };
-const bread_crumbs = computed(() => {
-  let current_path = store.current_path;
-  let result = current_path
-    .split('\\')
-    .filter(Boolean)
-    .flatMap((element, index, array) => {
-      return index === array.length - 1 ? [element] : [element, '>'];
-    });
-  return result;
+const pathInput = useTemplateRef('pathInput');
+const bread_crumbs_component = useTemplateRef('bread_crumbs_component');
+const {
+  bread_crumbs,
+  accesssBreadcrumb,
+  onEditing,
+  isEditing,
+  handleFocusOut,
+  editPath,
+  cancelEditing,
+} = useBreadCrumb(bread_crumbs_component, pathInput);
+const isShowBreadcrumb = computed(() => {
+  return bread_crumbs.value.length > 0;
 });
-const accesss_breadcrumb = (index) => {
-  let path = [...bread_crumbs.value]
-    .slice(0, index + 1)
-    .join('')
-    .replaceAll('>', '\\');
-  path = path.split('\\').length == 1 ? (path += '\\') : path;
-  store.access_dir(path, 'Directory');
-};
-const is_editing = ref(false);
-const pathInput = ref();
-const edit_path = async (e) => {
-  let path = pathInput.value.value;
-  console.log(path);
-  let is_exists = await invoke('check_path', { path: path });
-  if (is_exists) {
-    store.access_dir(path);
-  }
-};
-const on_editing = async (e) => {
-  let target = e.target;
-  let edit_classList = [
-    'bread_crumbs_container',
-    'bread_crumbs',
-    'bread_crumbs_edit',
-    'bread_crumbs_edit_button',
-  ];
-  if (
-    [...target.classList].some((el) => {
-      return edit_classList.includes(el);
-    })
-  ) {
-    is_editing.value = true;
-    nextTick(() => {
-      pathInput.value.focus();
-    });
-  } else {
-    is_editing.value = false;
-  }
-};
-const bread_crumbs_component = ref();
-const handle_focus_out = (e) => {
-  let relatedTarget = e.relatedTarget;
-  if (bread_crumbs_component.value.contains(relatedTarget)) return;
-  is_editing.value = false;
-};
 </script>
 <template>
   <nav class="layout_header container">
     <div>
-      <button @click="store.navigate_back()"><</button>
-      <button @click="store.navigate_forward()">></button>
+      <button @click.left="store.navigate_back()">
+        <Icon icon="chevron-left" />
+      </button>
+      <button @click.left="store.navigate_forward()">
+        <Icon icon="chevron-right" />
+      </button>
     </div>
-    <div class="bread_crumbs_container">
-      <div
-        ref="bread_crumbs_component"
-        class="bread_crumbs"
-        @click="on_editing"
-      >
-        <div
-          @focusout="handle_focus_out"
-          class="bread_crumbs_edit_container"
-          v-if="is_editing"
-        >
+    <div
+      class="bread_crumbs_container"
+      v-if="isShowBreadcrumb"
+      @focusout="handleFocusOut"
+    >
+      <div ref="bread_crumbs_component" class="bread_crumbs" @click="onEditing">
+        <div class="bread_crumbs_edit_container" v-if="isEditing">
           <input
             ref="pathInput"
             class="bread_crumbs_edit"
             type="text"
+            @keydown.enter="editPath"
+            @keydown.esc="cancelEditing"
             :value="store.current_path"
           />
           <button
             class="bread_crumbs_edit_button"
-            @click="edit_path"
-            v-show="is_editing"
+            @click="editPath"
+            v-show="isEditing"
           >
             <Icon icon="edit"></Icon>
           </button>
         </div>
         <div v-else>
           <span
-            class="bread_crumbs_item fioasfosa"
+            class="bread_crumbs_item"
             v-for="(item, index) in bread_crumbs"
-            @click.stop="accesss_breadcrumb(index)"
+            :key="index"
+            @click.stop="accesssBreadcrumb(index)"
             >{{ item }}</span
           >
         </div>
       </div>
     </div>
     <div>
-      <input ref="input" type="text" placeholder="Search ... " />
-      <button @click="search()" type="button">seach</button>
+      <input
+        ref="searchInput"
+        @keydown.enter="search"
+        @keydown.esc="cancelEditing"
+        type="text"
+        placeholder="Search ... "
+      />
+      <button @click="search" type="button">seach</button>
     </div>
   </nav>
 </template>

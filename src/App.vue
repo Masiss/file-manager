@@ -1,55 +1,32 @@
 <script setup>
-import { ref, shallowRef, watch } from 'vue';
-import { usePathStore } from './store/path.js';
-import { storeToRefs } from 'pinia';
-
-import SideBar from './components/SideBar.vue';
 import NavBar from './components/NavBar.vue';
-import Menu from './components/Menu.vue';
-import DragableView from './views/DragableView.vue';
-const store = usePathStore();
-const items = ref([]);
-const view = shallowRef('');
-const { getView } = storeToRefs(store);
-watch(
-  () => store.current_path,
-  async () => {
-    items.value = await store.load_path();
-    view.value = getView.value;
-  },
-  { immediate: true },
-);
-const loadSearchItems = (search_items) => {
-  items.value = search_items;
-  view.value = getView.value;
-};
-const menuX = ref();
-const menuY = ref();
-const showMenu = ref(false);
-const selecting_items = ref(null);
-const handleContextMenu = (e) => {
-  menuX.value = e.clientX;
-  menuY.value = e.clientY;
-  showMenu.value = true;
-  selecting_items.value = e.target.parentNode.getAttribute('data-path');
-  console.log();
-};
+import Menu from './components/Menu/Menu.vue';
+import TheMain from './layout/TheMain.vue';
+import { onMounted, onUnmounted } from 'vue';
+import { useKeyboard } from './composables/keyboard.js';
+const { handleKeydown } = useKeyboard();
+import { ref } from 'vue';
+import TitleBar from './layout/TitleBar.vue';
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+});
 </script>
 <template>
-  <NavBar @search="loadSearchItems" />
+  <TitleBar />
+  <NavBar />
   <main @contextmenu.prevent="handleContextMenu" class="layout_main">
-    <SideBar :items="items"></SideBar>
+    <TheMain></TheMain>
     <!-- <button width="100%" type="button" @click="store.$reset()">Reset</button> -->
-    <DragableView>
-      <component class="container" :is="view" :items="items" />
-    </DragableView>
   </main>
-  <Menu
-    v-if="showMenu"
-    :menuX="menuX"
-    :menuY="menuY"
-    :selectingItems="selecting_items"
-  />
+  <!-- <Menu -->
+  <!--   v-if="showMenu" -->
+  <!--   :menuX="menuX" -->
+  <!--   :menuY="menuY" -->
+  <!--   :selectingItems="selecting_items" -->
+  <!-- /> -->
 </template>
 
 <style scoped></style>

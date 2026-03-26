@@ -10,6 +10,7 @@ use toml::{self};
 pub struct Config {
     #[serde(default)]
     pub except_list: Vec<String>,
+    pub quick_access: Vec<String>,
 }
 pub fn get_config_path(filename: &str) -> PathBuf {
     config_dir()
@@ -89,8 +90,10 @@ pub fn generate_config() {
         "Caches",
         "Logs",
     ];
+    let quick_access_list = vec!["~\\Downloads\\"];
     let config: String = toml::to_string(&Config {
         except_list: except_list.iter().map(|s| s.to_string()).collect(),
+        quick_access: quick_access_list.iter().map(|s| s.to_string()).collect(),
     })
     .expect("GEN CONFIG :: CANT CONVERT TO TOML");
     file.write_all(config.as_bytes()).unwrap()

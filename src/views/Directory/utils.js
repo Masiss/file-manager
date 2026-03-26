@@ -14,5 +14,19 @@ export function format_size(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+export function useThrottle() {
+  let rafId = null;
+  function throttle(fn) {
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => {
+      fn();
+      rafId = null;
+    });
+  }
+  return {
+    rafId,
+    throttle,
+  };
 }
