@@ -1,12 +1,18 @@
-use dirs::config_dir;
+use anyhow::Result;
+use dirs::{config_dir, download_dir, home_dir};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{
+    collections::HashMap,
     fs::{self, File},
     io::Write,
     path::PathBuf,
 };
 use toml::{self};
-#[derive(Debug, Serialize, Deserialize)]
+
+use crate::commands::{config, error::Error};
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
     pub except_list: Vec<String>,
@@ -17,6 +23,13 @@ pub fn get_config_path(filename: &str) -> PathBuf {
         .expect("Cant find config dir")
         .join("file_manager")
         .join(filename)
+}
+#[tauri::command]
+pub fn get_quick_access() -> Result<Vec<String>, Error> {
+    let config_path = get_config_path("config.toml");
+    let config_file = fs::read_to_string(config_path)?;
+    let config: Config = toml::from_str(&config_file).unwrap_or_default();
+    Ok(config.quick_access)
 }
 #[tauri::command]
 pub fn generate_config() {
@@ -90,10 +103,12 @@ pub fn generate_config() {
         "Caches",
         "Logs",
     ];
-    let quick_access_list = vec!["~\\Downloads\\"];
+    let home_dir = home_dir().unwrap().display().to_string();
+    let download_dir = download_dir().unwrap().display().to_string();
+    let quick_access_list = vec![home_dir, download_dir];
     let config: String = toml::to_string(&Config {
         except_list: except_list.iter().map(|s| s.to_string()).collect(),
-        quick_access: quick_access_list.iter().map(|s| s.to_string()).collect(),
+        quick_access: quick_access_list,
     })
     .expect("GEN CONFIG :: CANT CONVERT TO TOML");
     file.write_all(config.as_bytes()).unwrap()

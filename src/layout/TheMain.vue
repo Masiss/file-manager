@@ -1,5 +1,5 @@
 <script setup>
-import { ref, shallowRef, useTemplateRef, watch } from 'vue';
+import { nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue';
 import { usePathStore } from '../store/path.js';
 import { storeToRefs } from 'pinia';
 import SideBar from '../components/SideBar.vue';
@@ -25,7 +25,22 @@ const {
   handleMouseMove,
   handleMouseUp,
   handleOnScroll,
+  intersected,
 } = useDragSelect(draggable_container);
+const isShowMenu = ref(false);
+const x = ref();
+const y = ref();
+const handleContextMenu = (e) => {
+  x.value = e.clientX;
+  y.value = e.clientY;
+  isShowMenu.value = true;
+  nextTick(() => {
+    window.addEventListener('click', closeContextMenu);
+  });
+};
+const closeContextMenu = (e) => {
+  isShowMenu.value = false;
+};
 </script>
 <template>
   <SideBar :items="items"></SideBar>
@@ -35,6 +50,7 @@ const {
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
     @mousemove="handleMouseMove"
+    @contextmenu.prevent="handleContextMenu"
     class="draggable-container layout-browser"
     ref="draggable_container"
     id="draggable_container"
@@ -50,6 +66,7 @@ const {
   <Teleport to="body">
     <div v-if="is_dragging" :style="box_style" ref="box" class="drag-box"></div>
   </Teleport>
+  <Menu v-show="isShowMenu" :x="x" :y="y" />
 </template>
 <style>
 .drag-box {
@@ -60,6 +77,7 @@ const {
   pointer-events: none;
 }
 .draggable-container {
+  display: block;
   scroll-behavior: smooth;
   position: relative;
   overflow: auto;

@@ -22,8 +22,6 @@ onMounted(() => {
     const { onMouseDown } = useResizing(th);
     //set default col width
     th.value.style.width = cols[i].width + 'px';
-    // let tableWidth = cols.reduce((acc, cur) => (acc += cur.width), 0);
-    // table.value.style.width = tableWidth + 'px';
     //set fit col width
     th.value.addEventListener('dblclick', (e) => {
       //get max width
@@ -33,6 +31,7 @@ onMounted(() => {
       );
       //padding
       maxWidth += (5 / 100) * maxWidth;
+      if (maxWidth === e.target.clientWidth) return;
       e.target.style.width = maxWidth + 'px';
     });
     th.value.addEventListener('mousedown', onMouseDown);
@@ -41,16 +40,16 @@ onMounted(() => {
 </script>
 <template>
   <div class="directory-view">
-    <!-- <Teleport to="#draggable_container"> -->
-    <progress
-      id="loading_progressbar"
-      :value="current_index"
-      :max="sorted_items.length"
-      v-show="isProgressing()"
-    >
-      {{ current_index }}
-    </progress>
-    <!-- </Teleport> -->
+    <Teleport to="#draggable_container">
+      <progress
+        id="loading_progressbar"
+        :value="current_index"
+        :max="sorted_items.length"
+        v-show="isProgressing()"
+      >
+        {{ current_index }}
+      </progress>
+    </Teleport>
     <table ref="table" class="table-item">
       <thead>
         <tr>
@@ -68,6 +67,7 @@ onMounted(() => {
           :key="item.path"
           @click.stop="store.access_dir(item.path, item.file_type)"
           :data-path="item.path"
+          :data-type="item.type"
           ref="lines"
         >
           <td v-show="isDragging"><input type="checkbox" /></td>
@@ -136,7 +136,7 @@ td {
 }
 .directory-view {
   overflow: auto;
-  width: fit-content;
+  width: 100%;
   scroll-behavior: smooth;
 }
 </style>

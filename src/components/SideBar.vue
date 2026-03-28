@@ -1,23 +1,25 @@
 <script setup>
-import { ref, useTemplateRef, watch } from 'vue';
+import { onMounted, ref, useTemplateRef, watch } from 'vue';
 import SidebarItem from './SidebarItem.vue';
 const props = defineProps(['items']);
 import { useTreeView } from './treeview.js';
 import { useResizing } from '../composables/resize.js';
+import { invoke } from '@tauri-apps/api/core';
+const quickAccess = ref();
+const getQuickAccess = async () => {
+  let res = await invoke('get_quick_access');
+  quickAccess.value = res.map((path) => ({
+    path: path,
+    name: path.split('\\').pop(),
+  }));
+};
 
 const sidebarRef = useTemplateRef('sidebar');
 const { onMouseDown, resize2Fit } = useResizing(sidebarRef);
 const { getSub, tree } = useTreeView();
-const quickAccesses = ref([
-  {
-    name: 'Downloads',
-    path: '%USER%\\Downloads\\',
-  },
-  {
-    name: 'app',
-    path: 'D:\\app\\',
-  },
-]);
+onMounted(() => {
+  getQuickAccess();
+});
 </script>
 <template>
   <aside
@@ -36,7 +38,7 @@ const quickAccesses = ref([
     <span> Quick accesses </span>
     <ul>
       <li
-        v-for="item in quickAccesses"
+        v-for="item in quickAccess"
         @click="getSub(item.path)"
         :key="item.path"
       >

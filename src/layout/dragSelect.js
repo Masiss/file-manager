@@ -3,12 +3,14 @@ export function useDragSelect(draggable_container) {
   const is_dragging = ref(false);
   const box = ref(null);
   const box_style = ref({});
+  const intersected = ref([]);
   let box_start = { x: 0, y: 0 };
   let box_end = { x: 0, y: 0 };
   let start_scroll_top = 0;
 
   const handleMouseDown = (e) => {
     is_dragging.value = true;
+    intersected.value = [];
     box_start = { x: e.clientX, y: e.clientY };
 
     box_style.value.left = box_start.x + 'px';
@@ -73,8 +75,6 @@ export function useDragSelect(draggable_container) {
   };
 
   const intersections = () => {
-    let intersected = [];
-
     let boxRect = box.value.getBoundingClientRect();
 
     draggable_container.value.querySelectorAll('[data-path]').forEach((el) => {
@@ -87,7 +87,7 @@ export function useDragSelect(draggable_container) {
 
       if (isIntersected) {
         el.classList.add('selected');
-        intersected.push(el);
+        intersected.value.push(el);
       } else {
         if (el.classList.contains('selected')) el.classList.remove('selected');
       }
@@ -114,5 +114,6 @@ export function useDragSelect(draggable_container) {
     handleMouseMove,
     handleMouseUp,
     handleOnScroll,
+    intersected,
   };
 }

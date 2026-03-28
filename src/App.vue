@@ -8,25 +8,22 @@ const { handleKeydown } = useKeyboard();
 import { ref } from 'vue';
 import TitleBar from './layout/TitleBar.vue';
 onMounted(() => {
+  //handle Alt+ left/right
   window.addEventListener('keydown', handleKeydown);
 });
 onUnmounted(() => {
+  //remove event Alt+ left/right
   window.removeEventListener('keydown', handleKeydown);
 });
 </script>
 <template>
   <TitleBar />
   <NavBar />
-  <main @contextmenu.prevent="handleContextMenu" class="layout_main">
+  <main class="layout_main">
     <TheMain></TheMain>
     <!-- <button width="100%" type="button" @click="store.$reset()">Reset</button> -->
+    <Menu v-if="showMenu" />
   </main>
-  <!-- <Menu -->
-  <!--   v-if="showMenu" -->
-  <!--   :menuX="menuX" -->
-  <!--   :menuY="menuY" -->
-  <!--   :selectingItems="selecting_items" -->
-  <!-- /> -->
 </template>
 
 <style scoped></style>

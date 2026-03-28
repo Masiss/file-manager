@@ -56,7 +56,7 @@ onMounted(() => {
 }
 .titlebar button {
   appearance: none;
-  padding: 0 25px;
+  padding: 5px 25px;
   /* margin: 0 7px; */
   border: none;
   display: inline-flex;

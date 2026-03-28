@@ -35,12 +35,11 @@ export function useTreeView() {
         tree.value = formattedDisk;
         return;
       }
-      if (typeof newItem[0] === 'string') {
-        let samplePath = newItem[0];
-        let path = samplePath?.split('\\').slice(0, -1).join('\\').concat('\\');
-        if (!isSubExist(path)) {
-          insertSubs(path, newItem);
-        }
+      if (!store.current_path) return;
+      let samplePath = newItem[0];
+      let path = samplePath?.split('\\').slice(0, -1).join('\\').concat('\\');
+      if (!isSubExist(path)) {
+        insertSubs(path, newItem);
       }
     },
   );

@@ -1,9 +1,11 @@
 use crate::commands::error::Error;
+use crate::commands::fs::disk::{get_disk, load_disk};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::collections::HashMap;
 use std::fs::{self, DirEntry, Metadata};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
