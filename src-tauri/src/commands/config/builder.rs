@@ -21,7 +21,7 @@ pub struct Config {
 pub fn get_config_path(filename: &str) -> PathBuf {
     config_dir()
         .expect("Cant find config dir")
-        .join("file_manager")
+        .join("file-manager")
         .join(filename)
 }
 #[tauri::command]

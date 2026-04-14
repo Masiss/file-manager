@@ -2,11 +2,17 @@
 import NavBar from './components/NavBar.vue';
 import Menu from './components/Menu/Menu.vue';
 import TheMain from './layout/TheMain.vue';
-import { onMounted, onUnmounted } from 'vue';
+import Modal from './components/Modal.vue';
+import { onMounted, onUnmounted, watchEffect } from 'vue';
 import { useKeyboard } from './composables/keyboard.js';
+import { useModalStore } from './store/modal.js';
+import { useConfigStore } from './store/config.js';
 const { handleKeydown } = useKeyboard();
 import { ref } from 'vue';
 import TitleBar from './layout/TitleBar.vue';
+const modal = useModalStore();
+const config = useConfigStore();
+config.init();
 onMounted(() => {
   //handle Alt+ left/right
   window.addEventListener('keydown', handleKeydown);
@@ -22,8 +28,10 @@ onUnmounted(() => {
   <main class="layout_main">
     <TheMain></TheMain>
     <!-- <button width="100%" type="button" @click="store.$reset()">Reset</button> -->
-    <Menu v-if="showMenu" />
   </main>
+  <Teleport to="body">
+    <Modal v-show="modal.isShowing" />
+  </Teleport>
 </template>
 
 <style scoped></style>

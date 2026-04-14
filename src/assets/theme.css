@@ -1,31 +1,221 @@
-/* Import toàn bộ 4 flavors */
-@import '@catpuccin\palette\css\catpuccin.css';
-
-[data-theme='mocha'] {
-  /* Màu solid như bình thường */
-  --text: var(--ctp-mocha-text);
-  --text-sub: var(--ctp-mocha-subtext1);
-  --accent: var(--ctp-mocha-blue);
-  --border: var(--ctp-mocha-surface1);
-
-  /* Transparent versions — dùng rgba trực tiếp vì CSS variable không hỗ trợ alpha trực tiếp */
-  --bg-base: rgba(30, 30, 46, 0.9); /* mocha base #1e1e2e */
-  --bg-mantle: rgba(24, 24, 37, 0.75); /* mocha mantle #181825 */
-  --bg-crust: rgba(17, 17, 27, 0.7); /* mocha crust #11111b */
-  --bg-surface0: rgba(49, 50, 68, 0.6); /* hover */
-  --bg-surface1: rgba(69, 71, 90, 0.7); /* selected */
-  --border-rgb: rgba(69, 71, 90, 0.4); /* border nhẹ hơn */
+[data-theme='latte'] {
+  /* Base */
+  --ctp-rosewater: #dc8a78;
+  --ctp-flamingo: #dd7878;
+  --ctp-pink: #ea76cb;
+  --ctp-mauve: #8839ef;
+  --ctp-red: #d20f39;
+  --ctp-maroon: #e64553;
+  --ctp-peach: #fe640b;
+  --ctp-yellow: #df8e1d;
+  --ctp-green: #40a02b;
+  --ctp-teal: #179299;
+  --ctp-sky: #04a5e5;
+  --ctp-sapphire: #209fb5;
+  --ctp-blue: #1e66f5;
+  --ctp-lavender: #7287fd;
+  /* Neutral */
+  --ctp-text: #4c4f69;
+  --ctp-subtext1: #5c5f77;
+  --ctp-subtext0: #6c6f85;
+  --ctp-overlay2: #7c7f93;
+  --ctp-overlay1: #8c8fa1;
+  --ctp-overlay0: #9ca0b0;
+  --ctp-surface2: #acb0be;
+  --ctp-surface1: #bcc0cc;
+  --ctp-surface0: #ccd0da;
+  --ctp-base: #eff1f5;
+  --ctp-mantle: #e6e9ef;
+  --ctp-crust: #dce0e8;
 }
 
-[data-theme='latte'] {
-  --text: var(--ctp-latte-text);
-  --text-sub: var(--ctp-latte-subtext1);
-  --accent: var(--ctp-latte-blue);
+[data-theme='frappe'] {
+  --ctp-rosewater: #f2d5cf;
+  --ctp-flamingo: #eebebe;
+  --ctp-pink: #f4b8e4;
+  --ctp-mauve: #ca9ee6;
+  --ctp-red: #e78284;
+  --ctp-maroon: #ea999c;
+  --ctp-peach: #ef9f76;
+  --ctp-yellow: #e5c890;
+  --ctp-green: #a6d189;
+  --ctp-teal: #81c8be;
+  --ctp-sky: #99d1db;
+  --ctp-sapphire: #85c1dc;
+  --ctp-blue: #8caaee;
+  --ctp-lavender: #babbf1;
+  --ctp-text: #c6d0f5;
+  --ctp-subtext1: #b5bfe2;
+  --ctp-subtext0: #a5adce;
+  --ctp-overlay2: #949cbb;
+  --ctp-overlay1: #838ba7;
+  --ctp-overlay0: #737994;
+  --ctp-surface2: #626880;
+  --ctp-surface1: #51576d;
+  --ctp-surface0: #414559;
+  --ctp-base: #303446;
+  --ctp-mantle: #292c3c;
+  --ctp-crust: #232634;
+}
 
-  --bg-base: rgba(239, 241, 245, 0.8); /* latte base #eff1f5 */
-  --bg-mantle: rgba(230, 233, 239, 0.7); /* latte mantle #e6e9ef */
-  --bg-crust: rgba(220, 224, 232, 0.65); /* latte crust #dce0e8 */
-  --bg-surface0: rgba(204, 208, 218, 0.6);
-  --bg-surface1: rgba(188, 192, 204, 0.7);
-  --border-rgb: rgba(188, 192, 204, 0.4);
+[data-theme='macchiato'] {
+  --ctp-rosewater: #f4dbd6;
+  --ctp-flamingo: #f0c6c6;
+  --ctp-pink: #f5bde6;
+  --ctp-mauve: #c6a0f6;
+  --ctp-red: #ed8796;
+  --ctp-maroon: #ee99a0;
+  --ctp-peach: #f5a97f;
+  --ctp-yellow: #eed49f;
+  --ctp-green: #a6da95;
+  --ctp-teal: #8bd5ca;
+  --ctp-sky: #91d7e3;
+  --ctp-sapphire: #7dc4e4;
+  --ctp-blue: #8aadf4;
+  --ctp-lavender: #b7bdf8;
+  --ctp-text: #cad3f5;
+  --ctp-subtext1: #b8c0e0;
+  --ctp-subtext0: #a5adcb;
+  --ctp-overlay2: #939ab7;
+  --ctp-overlay1: #8087a2;
+  --ctp-overlay0: #6e738d;
+  --ctp-surface2: #5b6078;
+  --ctp-surface1: #494d64;
+  --ctp-surface0: #363a4f;
+  --ctp-base: #24273a;
+  --ctp-mantle: #1e2030;
+  --ctp-crust: #181926;
+}
+
+[data-theme='mocha'] {
+  --ctp-rosewater: #f5e0dc;
+  --ctp-flamingo: #f2cdcd;
+  --ctp-pink: #f5c2e7;
+  --ctp-mauve: #cba6f7;
+  --ctp-red: #f38ba8;
+  --ctp-maroon: #eba0ac;
+  --ctp-peach: #fab387;
+  --ctp-yellow: #f9e2af;
+  --ctp-green: #a6e3a1;
+  --ctp-teal: #94e2d5;
+  --ctp-sky: #89dceb;
+  --ctp-sapphire: #74c7ec;
+  --ctp-blue: #89b4fa;
+  --ctp-lavender: #b4befe;
+  --ctp-text: #cdd6f4;
+  --ctp-subtext1: #bac2de;
+  --ctp-subtext0: #a6adc8;
+  --ctp-overlay2: #9399b2;
+  --ctp-overlay1: #7f849c;
+  --ctp-overlay0: #6c7086;
+  --ctp-surface2: #585b70;
+  --ctp-surface1: #45475a;
+  --ctp-surface0: #313244;
+  --ctp-base: #1e1e2e;
+  --ctp-mantle: #181825;
+  --ctp-crust: #11111b;
+}
+
+[data-theme='latte'],
+[data-theme='frappe'],
+[data-theme='macchiato'],
+[data-theme='mocha'] {
+  /* Backgrounds */
+  --bg-app: var(--ctp-base); /* nền toàn app */
+  --bg-navbar: var(--ctp-crust); /* navbar / titlebar */
+  --bg-sidebar: var(--ctp-mantle); /* sidebar */
+  --bg-panel: var(--ctp-surface0); /* panel, card, dropdown */
+  --bg-hover: var(--ctp-surface0); /* hover state của row/item */
+  --bg-selected: var(--ctp-surface1); /* selected state */
+  --bg-input: var(--ctp-surface0); /* input, button */
+
+  /* Text */
+  --text-primary: var(--ctp-text); /* text chính */
+  --text-secondary: var(--ctp-subtext1); /* label, caption */
+  --text-muted: var(--ctp-overlay1); /* placeholder, disabled */
+  --text-accent: var(--ctp-blue); /* link, active tab */
+
+  /* Borders */
+  --border: var(--ctp-surface1); /* border bình thường */
+  --border-focus: var(--ctp-blue); /* focus ring */
+
+  /* Accents */
+  --accent: var(--ctp-blue); /* primary action, focus */
+  --accent-hover: var(--ctp-sapphire); /* hover trên accent */
+
+  /* Semantic */
+  --color-success: var(--ctp-green);
+  --color-warning: var(--ctp-yellow);
+  --color-error: var(--ctp-red);
+  --color-info: var(--ctp-sky);
+
+  /* File type icons */
+  --icon-folder: var(--ctp-mauve);
+  --icon-image: var(--ctp-green);
+  --icon-video: var(--ctp-peach);
+  --icon-audio: var(--ctp-yellow);
+  --icon-code: var(--ctp-teal);
+  --icon-archive: var(--ctp-maroon);
+  --icon-doc: var(--ctp-blue);
+  --icon-default: var(--ctp-subtext0);
+
+  /* Drag selection box */
+  --drag-box-bg: var(--ctp-blue);
+  --drag-box-border: var(--ctp-sapphire);
+
+  /* Progress bar */
+  --progress-track: var(--ctp-surface0);
+  --progress-fill: var(--ctp-blue);
+
+  /* Scrollbar */
+  --scrollbar-track: var(--ctp-mantle);
+  --scrollbar-thumb: var(--ctp-surface2);
+  --scrollbar-thumb-hover: var(--ctp-overlay0);
+}
+
+[data-glass='true'] .layout_header,
+[data-glass='true'] .layout_sidebar,
+[data-glass='true'] .layout_main {
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+}
+
+[data-glass='true'][data-theme='mocha'] {
+  --bg-app: rgba(30, 30, 46, 0.82);
+  --bg-navbar: rgba(17, 17, 27, 0.75);
+  --bg-sidebar: rgba(24, 24, 37, 0.78);
+  --bg-panel: rgba(49, 50, 68, 0.8);
+  --bg-hover: rgba(49, 50, 68, 0.6);
+  --bg-selected: rgba(69, 71, 90, 0.7);
+  --border: rgba(69, 71, 90, 0.45);
+}
+
+[data-glass='true'][data-theme='macchiato'] {
+  --bg-app: rgba(36, 39, 58, 0.82);
+  --bg-navbar: rgba(24, 25, 38, 0.75);
+  --bg-sidebar: rgba(30, 32, 48, 0.78);
+  --bg-panel: rgba(54, 58, 79, 0.8);
+  --bg-hover: rgba(54, 58, 79, 0.6);
+  --bg-selected: rgba(73, 77, 100, 0.7);
+  --border: rgba(73, 77, 100, 0.45);
+}
+
+[data-glass='true'][data-theme='frappe'] {
+  --bg-app: rgba(48, 52, 70, 0.82);
+  --bg-navbar: rgba(35, 38, 52, 0.75);
+  --bg-sidebar: rgba(41, 44, 60, 0.78);
+  --bg-panel: rgba(65, 69, 89, 0.8);
+  --bg-hover: rgba(65, 69, 89, 0.6);
+  --bg-selected: rgba(81, 87, 109, 0.7);
+  --border: rgba(81, 87, 109, 0.45);
+}
+
+[data-glass='true'][data-theme='latte'] {
+  --bg-app: rgba(239, 241, 245, 0.82);
+  --bg-navbar: rgba(220, 224, 232, 0.8);
+  --bg-sidebar: rgba(230, 233, 239, 0.78);
+  --bg-panel: rgba(204, 208, 218, 0.8);
+  --bg-hover: rgba(204, 208, 218, 0.6);
+  --bg-selected: rgba(188, 192, 204, 0.7);
+  --border: rgba(188, 192, 204, 0.5);
 }

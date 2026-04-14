@@ -49,9 +49,13 @@ export function useInfinityScroll(items, table, scrollInfo) {
     const { scrollTop, clientHeight } = scrollInfo.value;
     const { scrollHeight: tableScrollHeight } = table.value;
 
+    console.log(clientHeight, tableScrollHeight);
     if (clientHeight === 0 || tableScrollHeight === 0) return;
     let isBottom = scrollTop + clientHeight >= tableScrollHeight * 0.75;
-    if (isBottom && current_index.value < sorted_items.value.length) {
+    if (
+      (isBottom && current_index.value < sorted_items.value.length) ||
+      tableScrollHeight < clientHeight
+    ) {
       load_more();
     }
   }

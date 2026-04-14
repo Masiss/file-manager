@@ -1,15 +1,22 @@
 import { ref, onMounted, provide, watch, nextTick } from 'vue';
+import { useThrottle } from '../views/Directory/utils';
 export function useDragSelect(draggable_container) {
   const is_dragging = ref(false);
   const box = ref(null);
   const box_style = ref({});
   const intersected = ref([]);
-  let box_start = { x: 0, y: 0 };
+  let box_start = {};
   let box_end = { x: 0, y: 0 };
   let start_scroll_top = 0;
+  let hasDragged = false;
+  const { throttle } = useThrottle();
 
   const handleMouseDown = (e) => {
+    if (e.button !== 0) return;
+    if (e.target.tagName !== 'TD') return;
     is_dragging.value = true;
+    hasDragged = false;
+    intersected.value.forEach((item) => item.classList.remove('selected'));
     intersected.value = [];
     box_start = { x: e.clientX, y: e.clientY };
 
@@ -21,6 +28,12 @@ export function useDragSelect(draggable_container) {
   const edge_threshold = 30;
   const handleMouseMove = (e) => {
     if (!is_dragging.value) return;
+    //check dragging
+    let diffX = Math.abs(e.clientX - box_start.x);
+    let diffY = Math.abs(e.clientY - box_start.y);
+    if (diffX > 5 || diffY > 5) {
+      hasDragged = true;
+    }
 
     const current_scroll = draggable_container.value.scrollTop || 0;
 
@@ -64,7 +77,7 @@ export function useDragSelect(draggable_container) {
       });
     }
 
-    intersections();
+    throttle(intersections);
   };
 
   const handleMouseUp = (e) => {
@@ -72,6 +85,18 @@ export function useDragSelect(draggable_container) {
     box_style.value = {};
     box_start = { x: 0, y: 0 };
     box_end = { x: 0, y: 0 };
+  };
+  const handleClick = (e) => {
+    if (hasDragged) return;
+    e.stopPropagation();
+    let el = e.target.closest('tbody tr');
+
+    intersected.value.forEach((item) => item.classList.remove('selected'));
+    intersected.value = [];
+    if (el) {
+      el.classList.add('selected');
+      intersected.value.push(el);
+    }
   };
 
   const intersections = () => {
@@ -85,35 +110,35 @@ export function useDragSelect(draggable_container) {
         boxRect.top < rect.bottom &&
         boxRect.top + boxRect.height > rect.top;
 
+      let input = el.querySelector('input');
       if (isIntersected) {
+        if (el.classList.contains('selected') || intersected.value.includes(el))
+          return;
         el.classList.add('selected');
         intersected.value.push(el);
+        if (input) {
+          input.checked = true;
+        }
       } else {
-        if (el.classList.contains('selected')) el.classList.remove('selected');
+        if (el.classList.contains('selected')) {
+          el.classList.remove('selected');
+          if (input) {
+            input.checked = false;
+          }
+        }
       }
     });
   };
 
-  const scrollInfo = ref({
-    scrollTop: draggable_container.value?.scrollTop,
-    clientHeight: draggable_container.value?.clientHeight,
-    scrollHeight: draggable_container.value?.scrollHeight,
-  });
-  const handleOnScroll = (e) => {
-    let { scrollTop, clientHeight, scrollHeight } = e.target;
-
-    scrollInfo.value = { scrollTop, clientHeight, scrollHeight };
-  };
   return {
     is_dragging,
     draggable_container,
     box,
     box_style,
-    scrollInfo,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-    handleOnScroll,
     intersected,
+    handleClick,
   };
 }

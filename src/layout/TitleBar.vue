@@ -1,6 +1,6 @@
 <script setup>
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watchEffect } from 'vue';
 
 import Icon from '../components/Icon.vue';
 
@@ -38,7 +38,7 @@ onMounted(() => {
 <style scoped>
 .titlebar {
   user-select: none;
-  height: 30px;
+  height: 2rem;
   display: inline-flex;
 }
 .titlebar > * {
@@ -56,7 +56,7 @@ onMounted(() => {
 }
 .titlebar button {
   appearance: none;
-  padding: 5px 25px;
+  padding: 1rem 2rem;
   /* margin: 0 7px; */
   border: none;
   display: inline-flex;

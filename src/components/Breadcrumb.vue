@@ -73,14 +73,14 @@ const isShowBreadcrumb = computed(() => {
 }
 
 .bread_crumbs_item {
-  padding: 0 7px;
+  padding: 0 0.5rem;
   border: 0.5px solid grey;
 }
 .bread_crumbs_input {
   flex-grow: 1;
 }
 .bread_crumbs_edit_button {
-  width: 3vw;
+  width: 2rem;
   align-items: center;
 }
 </style>

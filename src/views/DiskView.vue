@@ -11,7 +11,7 @@ props.items?.forEach((disk) => {
   <div>
     <div v-for="disk in props.items">
       <button type="button" @click="store.access_dir(disk.mount_point)">
-        <span>{{ disk.mount_point }} :: {{ disk.name }} </span>
+        <span>{{ disk.mount_point }} : {{ disk.name }} </span>
         <div>
           <progress :value="disk.usage" :max="disk.total_space" />
           <span

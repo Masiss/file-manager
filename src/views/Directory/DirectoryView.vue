@@ -1,18 +1,37 @@
 <script setup>
 import { usePathStore } from '../../store/path.js';
-import { ref, inject, useTemplateRef, toRef, onMounted } from 'vue';
+import {
+  ref,
+  inject,
+  useTemplateRef,
+  toRef,
+  onMounted,
+  computed,
+  watch,
+} from 'vue';
 import { format_size, set_item_icon } from './utils.js';
+import { useFind } from './find.js';
 import Icon from '../../components/Icon.vue';
 import { useInfinityScroll } from './infinityScroll.js';
 import { useResizing } from '../../composables/resize.js';
-const props = defineProps(['items', 'isDragging', 'scrollInfo']);
+const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
 const store = usePathStore();
 const table = useTemplateRef('table');
 const { displaying_items, isProgressing, sorted_items, current_index } =
   useInfinityScroll(toRef(props, 'items'), table, toRef(props, 'scrollInfo'));
 const ths = ref();
 const lines = useTemplateRef('lines');
+const draggable_container = document.querySelector('#draggable_container');
+const {
+  handleKeydown,
+  findInPage,
+  nextMatching,
+  previousMatching,
+  closeContainer,
+  isFinding,
+} = useFind(lines, draggable_container, sorted_items);
 onMounted(() => {
+  document.addEventListener('keydown', handleKeydown);
   ths.value = table.value.querySelectorAll('th');
   let cols = Array.from(ths.value).map((th) => ({
     width: th.getBoundingClientRect().width,
@@ -29,14 +48,20 @@ onMounted(() => {
         (max, currentValue) => Math.max(max, currentValue.cells[i].scrollWidth),
         0,
       );
+      if (maxWidth === e.target.clientWidth) return;
       //padding
       maxWidth += (5 / 100) * maxWidth;
-      if (maxWidth === e.target.clientWidth) return;
       e.target.style.width = maxWidth + 'px';
     });
     th.value.addEventListener('mousedown', onMouseDown);
   });
 });
+const showCheckbox = computed(() => {
+  return props.isDragging || props.intersected?.length > 0;
+});
+const isSelected = (path) => {
+  return props.intersected?.some((el) => el.dataset.path === path) ?? false;
+};
 </script>
 <template>
   <div class="directory-view">
@@ -50,10 +75,31 @@ onMounted(() => {
         {{ current_index }}
       </progress>
     </Teleport>
+    <div v-if="isFinding" class="page-search-container container">
+      <div class="page-search-item">
+        <input @input="findInPage" type="text" placeholder="Type..." />
+      </div>
+      <div class="page-search-item">
+        <button @click="previousMatching">
+          <Icon icon="arrow-left-circle" icon-size="12" />
+        </button>
+      </div>
+      <div class="page-search-item">
+        <button @click="nextMatching">
+          <Icon icon="arrow-right-circle" icon-size="12" />
+        </button>
+      </div>
+
+      <div class="page-search-item">
+        <button @click="closeContainer">
+          <Icon icon="x" icon-size="12" />
+        </button>
+      </div>
+    </div>
     <table ref="table" class="table-item">
       <thead>
         <tr>
-          <th v-show="isDragging"></th>
+          <th v-if="showCheckbox" style="width: 3vw"></th>
           <th>Name</th>
           <th>Created at</th>
           <th>Last modified</th>
@@ -65,12 +111,14 @@ onMounted(() => {
         <tr
           v-for="item in displaying_items"
           :key="item.path"
-          @click.stop="store.access_dir(item.path, item.file_type)"
+          @dblclick="store.access_dir(item.path, item.file_type)"
           :data-path="item.path"
           :data-type="item.type"
           ref="lines"
         >
-          <td v-show="isDragging"><input type="checkbox" /></td>
+          <td v-if="showCheckbox" style="width: 3vw">
+            <input :checked="isSelected(item.path)" type="checkbox" />
+          </td>
           <td class="name-cell">
             <!-- <span> -->
             <Icon :icon="set_item_icon(item.file_type)" />
@@ -91,7 +139,7 @@ onMounted(() => {
   gap: 5px;
 }
 #loading_progressbar {
-  width: 100vw;
+  width: 100%;
   height: 5px;
   margin: 0 auto;
   position: sticky;
@@ -102,13 +150,14 @@ onMounted(() => {
   border: none;
   overflow: scroll;
   min-width: 100%;
-  width: fit-content;
+  width: 100%;
   table-layout: fixed;
 }
 th {
   font-weight: 800;
   position: relative;
   border-right: 1px solid grey;
+  min-width: 80px;
 }
 th::after {
   content: '';
@@ -134,9 +183,31 @@ td {
 td {
   padding: 0 5px;
 }
+.page-search-container {
+  display: inline-flex;
+  gap: 0.5rem;
+  /* max-width: 300px; */
+  position: fixed;
+  z-index: 100;
+  /* top: 0; */
+  right: 1rem;
+  padding: 2px 5px;
+  background: var(--bg-panel);
+  input {
+    width: 10rem;
+  }
+  .page-search-item {
+    border: 0;
+    :hover {
+      border: 1px solid black;
+    }
+  }
+}
 .directory-view {
-  overflow: auto;
+  overflow-x: auto;
   width: 100%;
+  min-width: 100%;
+  position: relative;
   scroll-behavior: smooth;
 }
 </style>

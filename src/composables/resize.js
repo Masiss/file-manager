@@ -11,7 +11,6 @@ export function useResizing(resizingEl) {
   };
   const onMouseMove = (e) => {
     let diff = e.clientX - m_pos;
-    if (diff < 10) return;
     resizingEl.value.style.width = Math.max(50, width + diff) + 'px';
   };
   const onMouseUp = (e) => {

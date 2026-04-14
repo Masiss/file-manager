@@ -25,6 +25,7 @@ fn all_commands() -> fn(Invoke) -> bool {
 }
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             // Example: Spawn an async task, manage state, etc.
             tauri::async_runtime::spawn(async move {

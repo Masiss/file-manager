@@ -12,6 +12,7 @@
   "dependencies": {
     "@catppuccin/palette": "^1.8.0",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-fs": "~2",
     "@tauri-apps/plugin-opener": "^2",
     "feather-icons": "^4.29.2",
     "pinia": "^3.0.4",
