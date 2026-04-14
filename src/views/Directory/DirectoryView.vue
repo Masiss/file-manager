@@ -17,11 +17,15 @@ import { useResizing } from '../../composables/resize.js';
 const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
 const store = usePathStore();
 const table = useTemplateRef('table');
-const { displaying_items, isProgressing, sorted_items, current_index } =
-  useInfinityScroll(toRef(props, 'items'), table, toRef(props, 'scrollInfo'));
+const {
+  displaying_items,
+  isProgressing,
+  sorted_items,
+  current_index,
+  load_more,
+} = useInfinityScroll(toRef(props, 'items'), table, toRef(props, 'scrollInfo'));
 const ths = ref();
 const lines = useTemplateRef('lines');
-const draggable_container = document.querySelector('#draggable_container');
 const {
   handleKeydown,
   findInPage,
@@ -29,7 +33,7 @@ const {
   previousMatching,
   closeContainer,
   isFinding,
-} = useFind(lines, draggable_container, sorted_items);
+} = useFind(lines, sorted_items, load_more);
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown);
   ths.value = table.value.querySelectorAll('th');

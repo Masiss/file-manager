@@ -90,5 +90,6 @@ export function useInfinityScroll(items, table, scrollInfo) {
     isProgressing,
     current_index,
     items,
+    load_more,
   };
 }
