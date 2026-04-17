@@ -9,6 +9,7 @@ export function useDragSelect(draggable_container) {
   let box_end = { x: 0, y: 0 };
   let start_scroll_top = 0;
   let hasDragged = false;
+  let suppressClick = false;
   const { throttle } = useThrottle();
 
   const handleMouseDown = (e) => {
@@ -16,6 +17,7 @@ export function useDragSelect(draggable_container) {
     if (e.target.tagName !== 'TD') return;
     is_dragging.value = true;
     hasDragged = false;
+    suppressClick = false;
     intersected.value.forEach((item) => item.classList.remove('selected'));
     intersected.value = [];
     box_start = { x: e.clientX, y: e.clientY };
@@ -33,6 +35,7 @@ export function useDragSelect(draggable_container) {
     let diffY = Math.abs(e.clientY - box_start.y);
     if (diffX > 5 || diffY > 5) {
       hasDragged = true;
+      suppressClick = true;
     }
 
     const current_scroll = draggable_container.value.scrollTop || 0;
@@ -85,12 +88,32 @@ export function useDragSelect(draggable_container) {
     box_style.value = {};
     box_start = { x: 0, y: 0 };
     box_end = { x: 0, y: 0 };
+    if (hasDragged) {
+      const blockClick = (clickEvent) => {
+        clickEvent.stopPropagation();
+        clickEvent.preventDefault();
+        document.removeEventListener('click', blockClick, { capture: true });
+      };
+      document.addEventListener('click', blockClick, { capture: true });
+      // Reset trạng thái
+      hasDragged = false;
+      suppressClick = false;
+    }
   };
+  // const removeSelected = () => {
+  //   intersected.value.forEach((item) => item.classList.remove('selected'));
+  //   intersected.value = [];
+  // };
   const handleClick = (e) => {
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
     if (hasDragged) return;
     e.stopPropagation();
     let el = e.target.closest('tbody tr');
 
+    console.log(el);
     intersected.value.forEach((item) => item.classList.remove('selected'));
     intersected.value = [];
     if (el) {

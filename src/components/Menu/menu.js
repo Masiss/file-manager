@@ -66,7 +66,6 @@ export function useMenu(selectedItems) {
     return [...generalMenu.value, ...(menuType?.value ?? [])];
   };
   const menu = computed(() => {
-    console.log(selectedItems.value);
     if (selectedItems.value.length === 1) {
       return selectedItems.value.dataset?.type === 'File'
         ? combineMenu(fileMenu)

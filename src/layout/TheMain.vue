@@ -6,6 +6,7 @@ import {
   shallowRef,
   useTemplateRef,
   watch,
+  computed,
 } from 'vue';
 import { usePathStore } from '../store/path.js';
 import { storeToRefs } from 'pinia';
@@ -22,6 +23,7 @@ watch(
   () => {
     items.value = pathStore.items;
     view.value = getView.value;
+    intersected.value = [];
   },
 );
 const {
@@ -92,6 +94,7 @@ onMounted(() => {
     ref="draggable_container"
     id="draggable_container"
   >
+    <div ref="progressbar_container" id="progressbar_container"></div>
     <component
       class="container"
       :is="view"
@@ -100,6 +103,7 @@ onMounted(() => {
       :scrollInfo="scrollInfo"
       :intersected="intersected"
     />
+    <div id="bottom-line-container" class="bottom-line-container"></div>
   </div>
   <Teleport to="body">
     <div
@@ -119,6 +123,17 @@ onMounted(() => {
   </Teleport>
 </template>
 <style>
+#progressbar_container {
+  position: sticky;
+  top: 0;
+}
+.bottom-line-container {
+  font-size: 1rem;
+  position: fixed;
+  border-top: 0.75px solid;
+  bottom: 0;
+  background: var(--bg-panel);
+}
 .drag-box {
   position: absolute;
   background-color: blue;

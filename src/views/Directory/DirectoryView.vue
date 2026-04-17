@@ -14,8 +14,9 @@ import { useFind } from './find.js';
 import Icon from '../../components/Icon.vue';
 import { useInfinityScroll } from './infinityScroll.js';
 import { useResizing } from '../../composables/resize.js';
+import BottomLine from '../../components/BottomLine/BottomLine.vue';
 const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
-const store = usePathStore();
+const pathStore = usePathStore();
 const table = useTemplateRef('table');
 const {
   displaying_items,
@@ -34,6 +35,14 @@ const {
   closeContainer,
   isFinding,
 } = useFind(lines, sorted_items, load_more);
+watch(
+  () => props.items,
+  () => {
+    console.log(props.items);
+    console.log(displaying_items.value);
+    console.log(sorted_items.value);
+  },
+);
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown);
   ths.value = table.value.querySelectorAll('th');
@@ -69,7 +78,7 @@ const isSelected = (path) => {
 </script>
 <template>
   <div class="directory-view">
-    <Teleport to="#draggable_container">
+    <Teleport to="#progressbar_container">
       <progress
         id="loading_progressbar"
         :value="current_index"
@@ -79,7 +88,11 @@ const isSelected = (path) => {
         {{ current_index }}
       </progress>
     </Teleport>
-    <div v-if="isFinding" class="page-search-container container">
+    <div
+      v-if="isFinding"
+      id="findPanel"
+      class="page-search-container container"
+    >
       <div class="page-search-item">
         <input @input="findInPage" type="text" placeholder="Type..." />
       </div>
@@ -115,7 +128,7 @@ const isSelected = (path) => {
         <tr
           v-for="item in displaying_items"
           :key="item.path"
-          @dblclick="store.access_dir(item.path, item.file_type)"
+          @dblclick="pathStore.access_dir(item.path, item.file_type)"
           :data-path="item.path"
           :data-type="item.type"
           ref="lines"
@@ -136,6 +149,15 @@ const isSelected = (path) => {
         </tr>
       </tbody>
     </table>
+    <Teleport to="#bottom-line-container">
+      <BottomLine
+        :itemsLength="sorted_items.length"
+        :loadedLength="displaying_items.length"
+        :isDragging="props.isDragging"
+        :isFinding="isFinding"
+        :selectedLength="intersected.length"
+      />
+    </Teleport>
   </div>
 </template>
 <style scoped>
@@ -145,9 +167,6 @@ const isSelected = (path) => {
 #loading_progressbar {
   width: 100%;
   height: 5px;
-  margin: 0 auto;
-  position: sticky;
-  top: 0px;
 }
 .table-item {
   border-collapse: collapse;
@@ -213,5 +232,6 @@ td {
   min-width: 100%;
   position: relative;
   scroll-behavior: smooth;
+  scrollbar-width: none;
 }
 </style>

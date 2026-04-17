@@ -11,7 +11,11 @@ export function useInfinityScroll(items, table, scrollInfo) {
   const sorted_items = ref([]);
   const is_loading = ref(false);
   const sort_items = () => {
-    if (!items.value || items.value.length === 0) return [];
+    if (!items.value || items.value.length === 0) {
+      displaying_items.value = [];
+      sorted_items.value = [];
+      return;
+    }
     sorted_items.value = [...items.value].sort((a, b) => {
       if (a.file_type < b.file_type) return -1;
       if (a.file_type > b.file_type) return 1;
@@ -22,7 +26,6 @@ export function useInfinityScroll(items, table, scrollInfo) {
     load_more();
   };
   const load_more = async () => {
-    console.log('load more');
     if (is_loading.value) return;
     if (current_index.value >= sorted_items.value.length) return;
     is_loading.value = true;
@@ -44,12 +47,10 @@ export function useInfinityScroll(items, table, scrollInfo) {
     throttle(check_and_fill_viewport);
   };
   function check_and_fill_viewport() {
-    console.log('fill view ');
     if (!scrollInfo.value) return;
     const { scrollTop, clientHeight } = scrollInfo.value;
     const { scrollHeight: tableScrollHeight } = table.value;
 
-    console.log(clientHeight, tableScrollHeight);
     if (clientHeight === 0 || tableScrollHeight === 0) return;
     let isBottom = scrollTop + clientHeight >= tableScrollHeight * 0.75;
     if (
