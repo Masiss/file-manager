@@ -8,34 +8,33 @@ export function useDragSelect(draggable_container) {
   let box_start = {};
   let box_end = { x: 0, y: 0 };
   let start_scroll_top = 0;
-  let hasDragged = false;
-  let suppressClick = false;
   const { throttle } = useThrottle();
 
   const handleMouseDown = (e) => {
     if (e.button !== 0) return;
     if (e.target.tagName !== 'TD') return;
-    is_dragging.value = true;
-    hasDragged = false;
-    suppressClick = false;
-    intersected.value.forEach((item) => item.classList.remove('selected'));
-    intersected.value = [];
     box_start = { x: e.clientX, y: e.clientY };
 
     box_style.value.left = box_start.x + 'px';
     box_style.value.top = box_start.y + 'px';
     start_scroll_top = draggable_container.value?.scrollTop || 0;
+    window.addEventListener('mousemove', handleMouseMove, {});
+    window.addEventListener('mouseup', handleMouseUp, {
+      once: true,
+    });
+    console.log('mouse down');
   };
   const scroll_speed = 15;
   const edge_threshold = 30;
   const handleMouseMove = (e) => {
-    if (!is_dragging.value) return;
     //check dragging
     let diffX = Math.abs(e.clientX - box_start.x);
     let diffY = Math.abs(e.clientY - box_start.y);
-    if (diffX > 5 || diffY > 5) {
-      hasDragged = true;
-      suppressClick = true;
+    if (diffX <= 5 && diffY <= 5) return; // chưa drag đủ ngưỡng
+    if (!is_dragging.value) {
+      is_dragging.value = true;
+      intersected.value.forEach((item) => item.classList.remove('selected'));
+      intersected.value = [];
     }
 
     const current_scroll = draggable_container.value.scrollTop || 0;
@@ -80,51 +79,45 @@ export function useDragSelect(draggable_container) {
       });
     }
 
-    throttle(intersections);
+    intersections();
+    // throttle(intersections);
   };
-
   const handleMouseUp = (e) => {
-    is_dragging.value = false;
-    box_style.value = {};
-    box_start = { x: 0, y: 0 };
-    box_end = { x: 0, y: 0 };
-    if (hasDragged) {
-      const blockClick = (clickEvent) => {
-        clickEvent.stopPropagation();
-        clickEvent.preventDefault();
-        document.removeEventListener('click', blockClick, { capture: true });
-      };
-      document.addEventListener('click', blockClick, { capture: true });
-      // Reset trạng thái
-      hasDragged = false;
-      suppressClick = false;
-    }
-  };
-  // const removeSelected = () => {
-  //   intersected.value.forEach((item) => item.classList.remove('selected'));
-  //   intersected.value = [];
-  // };
-  const handleClick = (e) => {
-    if (suppressClick) {
-      suppressClick = false;
+    window.removeEventListener('mousemove', handleMouseMove);
+    if (is_dragging.value) {
+      is_dragging.value = false;
+      box_style.value = {};
+      box_start = { x: 0, y: 0 };
+      box_end = { x: 0, y: 0 };
       return;
     }
-    if (hasDragged) return;
-    e.stopPropagation();
-    let el = e.target.closest('tbody tr');
-
-    console.log(el);
-    intersected.value.forEach((item) => item.classList.remove('selected'));
-    intersected.value = [];
-    if (el) {
-      el.classList.add('selected');
-      intersected.value.push(el);
+    if (intersected.value.length > 0) {
+      intersected.value = [];
+      return;
     }
+    const el = e.target.closest('tbody tr');
+    intersected.value = el ? [el] : [];
   };
-
+  const handleClick = () => {};
+  watch(
+    intersected,
+    (newVal, oldVal) => {
+      oldVal?.forEach((el) => {
+        el.classList.remove('selected');
+        const input = el.querySelector('input');
+        if (input) input.checked = false;
+      });
+      newVal?.forEach((el) => {
+        el.classList.add('selected');
+        const input = el.querySelector('input');
+        if (input) input.checked = true;
+      });
+    },
+    { deep: false },
+  );
   const intersections = () => {
     let boxRect = box.value.getBoundingClientRect();
-
+    let newIntersections = [];
     draggable_container.value.querySelectorAll('[data-path]').forEach((el) => {
       const rect = el.getBoundingClientRect();
       const isIntersected =
@@ -132,25 +125,9 @@ export function useDragSelect(draggable_container) {
         boxRect.left + boxRect.width > rect.left &&
         boxRect.top < rect.bottom &&
         boxRect.top + boxRect.height > rect.top;
-
-      let input = el.querySelector('input');
-      if (isIntersected) {
-        if (el.classList.contains('selected') || intersected.value.includes(el))
-          return;
-        el.classList.add('selected');
-        intersected.value.push(el);
-        if (input) {
-          input.checked = true;
-        }
-      } else {
-        if (el.classList.contains('selected')) {
-          el.classList.remove('selected');
-          if (input) {
-            input.checked = false;
-          }
-        }
-      }
+      if (isIntersected) newIntersections.push(el);
     });
+    intersected.value = newIntersections;
   };
 
   return {

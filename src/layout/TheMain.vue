@@ -71,8 +71,9 @@ const handleContextMenu = (e) => {
 const closeContextMenu = (e) => {
   isShowMenu.value = false;
 };
+const viewComponent = useTemplateRef('viewComponent');
+
 onMounted(() => {
-  console.log(items.value);
   scrollInfo.value = {
     scrollTop: draggable_container.value?.scrollTop,
     clientHeight: draggable_container.value?.clientHeight,
@@ -86,16 +87,14 @@ onMounted(() => {
   <div
     @scroll.passive="handleOnScroll"
     @mousedown="handleMouseDown"
-    @mouseup="handleMouseUp"
-    @mousemove="handleMouseMove"
     @contextmenu.prevent="handleContextMenu"
-    @click="handleClick"
     class="draggable-container layout-browser"
     ref="draggable_container"
     id="draggable_container"
   >
     <div ref="progressbar_container" id="progressbar_container"></div>
     <component
+      ref="viewComponent"
       class="container"
       :is="view"
       :items="items"

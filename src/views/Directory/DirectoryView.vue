@@ -18,6 +18,7 @@ import BottomLine from '../../components/BottomLine/BottomLine.vue';
 const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
 const pathStore = usePathStore();
 const table = useTemplateRef('table');
+const emits = defineEmits(['line-click']);
 const {
   displaying_items,
   isProgressing,
@@ -69,6 +70,7 @@ onMounted(() => {
     th.value.addEventListener('mousedown', onMouseDown);
   });
 });
+
 const showCheckbox = computed(() => {
   return props.isDragging || props.intersected?.length > 0;
 });
