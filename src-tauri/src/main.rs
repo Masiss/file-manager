@@ -16,6 +16,7 @@ fn all_commands() -> fn(Invoke) -> bool {
         directory::open_file,
         directory::load_metadata,
         directory::load_path,
+        directory::sort_column,
         get_quick_access,
         generate_index,
         search,

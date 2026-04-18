@@ -32,7 +32,7 @@ pub fn get_disk() -> Result<Vec<Disk>> {
     Ok(list_disk)
 }
 #[tauri::command]
-pub fn load_disk() -> Result<String, Error> {
+pub fn load_disk() -> Result<Vec<Disk>, Error> {
     let list_disk = get_disk()?;
     // let mut sys = System::new_all();
     // sys.refresh_all();
@@ -60,6 +60,5 @@ pub fn load_disk() -> Result<String, Error> {
     //     // println!("File system: {:?}", disk.file_system());
     // }
     //
-    let encoded = serde_json::to_string(&list_disk)?;
-    Ok(encoded)
+    Ok(list_disk)
 }

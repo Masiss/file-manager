@@ -15,17 +15,19 @@ import Icon from '../../components/Icon.vue';
 import { useInfinityScroll } from './infinityScroll.js';
 import { useResizing } from '../../composables/resize.js';
 import BottomLine from '../../components/BottomLine/BottomLine.vue';
+import { invoke } from '@tauri-apps/api/core';
 const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
 const pathStore = usePathStore();
 const table = useTemplateRef('table');
 const emits = defineEmits(['line-click']);
+const items = ref(props.items);
 const {
   displaying_items,
   isProgressing,
   sorted_items,
   current_index,
   load_more,
-} = useInfinityScroll(toRef(props, 'items'), table, toRef(props, 'scrollInfo'));
+} = useInfinityScroll(items, table, toRef(props, 'scrollInfo'));
 const ths = ref();
 const lines = useTemplateRef('lines');
 const {
@@ -36,14 +38,41 @@ const {
   closeContainer,
   isFinding,
 } = useFind(lines, sorted_items, load_more);
-watch(
-  () => props.items,
-  () => {
-    console.log(props.items);
-    console.log(displaying_items.value);
-    console.log(sorted_items.value);
+const isAsc = ref(false);
+const sortingCol = ref(null);
+const sortColumn = async (colName) => {
+  sortingCol.value = colName;
+  isAsc.value = !isAsc.value;
+  console.log(colName);
+  let res = await invoke('sort_column', {
+    columnName: colName,
+    pathList: sorted_items.value,
+    ascending: isAsc.value,
+  });
+  items.value = res;
+};
+const cols = ref([
+  {
+    name: 'name',
+    label: 'Name',
   },
-);
+  {
+    name: 'created_at',
+    label: 'Created at',
+  },
+  {
+    name: 'last_modified',
+    label: 'Last modified',
+  },
+  {
+    name: 'path',
+    label: 'Path',
+  },
+  {
+    name: 'size',
+    label: 'Size',
+  },
+]);
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown);
   ths.value = table.value.querySelectorAll('th');
@@ -119,11 +148,15 @@ const isSelected = (path) => {
       <thead>
         <tr>
           <th v-if="showCheckbox" style="width: 3vw"></th>
-          <th>Name</th>
-          <th>Created at</th>
-          <th>Last modified</th>
-          <th>Path</th>
-          <th>Size</th>
+          <th v-for="col in cols" @click.prevent="sortColumn(col.name)">
+            <div>
+              <span> {{ col.label }}</span>
+              <span v-if="sortingCol === col.name" class="direction-container">
+                <Icon v-if="isAsc" icon="chevron-up" icon-size="12px" />
+                <Icon v-else icon="chevron-down" icon-size="12px" />
+              </span>
+            </div>
+          </th>
         </tr>
       </thead>
       <tbody ref="items_container">
@@ -183,6 +216,20 @@ th {
   position: relative;
   border-right: 1px solid grey;
   min-width: 80px;
+  > div {
+    width: 100%;
+    display: inline-flex;
+    justify-content: space-around;
+    align-items: center;
+    :first-child {
+      flex-grow: 1;
+    }
+    .direction-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+  }
 }
 th::after {
   content: '';

@@ -91,13 +91,13 @@ export const usePathStore = defineStore('current-path', () => {
       view.value = 'disk';
       res = await invoke('load_disk');
     }
-    items.value = JSON.parse(res);
+    items.value = res;
   }
   async function load_metadata(path) {
     let path_array = [...path];
     let res = await invoke('load_metadata', { pathList: path_array });
 
-    return JSON.parse(res);
+    return res;
   }
 
   return {

@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs::{self, DirEntry, Metadata};
 use std::path::{Path, PathBuf};
@@ -42,7 +43,7 @@ fn format_systemtime(time: SystemTime) -> String {
 }
 
 #[tauri::command]
-pub fn load_file(current_path: String) -> String {
+pub fn load_file(current_path: String) -> Result<Vec<File>, Error> {
     let path = Path::new(&current_path);
     let mut file_list: Vec<File> = Vec::new();
     if let Ok(metadata) = fs::metadata(path)
@@ -63,10 +64,11 @@ pub fn load_file(current_path: String) -> String {
             }
         }
     }
-    serde_json::to_string(&file_list).unwrap()
+    Ok(file_list)
+    // serde_json::to_string(&file_list).unwrap()
 }
 #[tauri::command]
-pub fn load_path(current_path: String) -> String {
+pub fn load_path(current_path: String) -> Vec<String> {
     let path = Path::new(&current_path);
 
     // let metadata = match fs::metadata(path) {
@@ -75,7 +77,7 @@ pub fn load_path(current_path: String) -> String {
     // };
     let entries = match fs::read_dir(&current_path) {
         Ok(entries) => entries,
-        _ => return serde_json::to_string(&"").unwrap(),
+        _ => return vec![],
     };
     let mut entries: Vec<DirEntry> = entries.filter_map(Result::ok).collect();
 
@@ -96,17 +98,18 @@ pub fn load_path(current_path: String) -> String {
         .into_par_iter()
         .map(|entry| entry.path().to_string_lossy().into_owned())
         .collect();
-    serde_json::to_string(&path_list).unwrap()
+    path_list
 }
 #[tauri::command]
-pub fn load_metadata(path_list: Vec<String>) -> Result<String, Error> {
+pub fn load_metadata(path_list: Vec<String>) -> Result<Vec<File>, Error> {
     let paths: Vec<PathBuf> = path_list.into_par_iter().map(PathBuf::from).collect();
     let result: Vec<File> = paths
         .into_par_iter()
         .filter_map(|path| create_file_from_path(path.as_path()).ok())
         .collect();
-    let encoded = serde_json::to_string(&result)?;
-    Ok(encoded)
+    Ok(result)
+    // let encoded = serde_json::to_string(&result)?;
+    // Ok(encoded)
 }
 fn create_file_from_entry(entry: DirEntry) -> Result<File> {
     let metadata = entry.metadata()?;
@@ -139,4 +142,29 @@ pub fn open_file(path: String) -> Result<(), Error> {
     let buf: PathBuf = PathBuf::from(path);
     open::that_detached(buf)?;
     Ok(())
+}
+#[tauri::command]
+pub fn sort_column(
+    column_name: String,
+    path_list: Vec<String>,
+    ascending: bool,
+) -> Result<Vec<String>, Error> {
+    let mut file_list: Vec<File> = path_list
+        .par_iter()
+        .map(|path| create_file_from_path(Path::new(&path)).unwrap())
+        .collect();
+    let cmp: fn(&File, &File) -> Ordering = match column_name.as_str() {
+        "size" => |a, b| a.size.cmp(&b.size),
+        "name" => |a, b| a.name.cmp(&b.name),
+        "created_at" => |a, b| a.created_at.cmp(&b.created_at),
+        "last_modified" => |a, b| a.last_modified.cmp(&b.last_modified),
+        _ => |_, _| Ordering::Equal,
+    };
+    if (ascending) {
+        file_list.sort_by(cmp);
+    } else {
+        file_list.sort_by(|a, b| cmp(b, a));
+    }
+    let new_list: Vec<String> = file_list.into_par_iter().map(|file| file.path).collect();
+    Ok(new_list)
 }
