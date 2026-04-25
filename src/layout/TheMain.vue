@@ -13,6 +13,7 @@ import { storeToRefs } from 'pinia';
 import SideBar from '../components/SideBar.vue';
 import { useDragSelect } from './dragSelect.js';
 import Menu from '../components/Menu/Menu.vue';
+import Icon from '../components/Icon.vue';
 const pathStore = usePathStore();
 const items = ref([]);
 const view = shallowRef('');
@@ -26,16 +27,8 @@ watch(
     intersected.value = [];
   },
 );
-const {
-  is_dragging,
-  box,
-  box_style,
-  handleMouseDown,
-  handleMouseMove,
-  handleMouseUp,
-  intersected,
-  handleClick,
-} = useDragSelect(draggable_container);
+const { is_dragging, box, box_style, handleMouseDown, intersected } =
+  useDragSelect(draggable_container);
 const scrollInfo = ref({
   scrollTop: draggable_container.value?.scrollTop,
   clientHeight: draggable_container.value?.clientHeight,
@@ -49,18 +42,21 @@ const handleOnScroll = (e) => {
 const isShowMenu = ref(false);
 const x = ref();
 const y = ref();
+const selectingPathList = computed(() => {
+  return intersected.value?.forEach((item) => item.dataset.path);
+});
 const handleContextMenu = (e) => {
-  let hasSelected = intersected.value.length > 0;
-  let closestRow = e.target.closest('tr');
-  let isSelected = closestRow.classList.contains('selected');
-  if (!isSelected) {
-    if (hasSelected) {
-      intersected.value.forEach((tr) => tr.classList.remove('selected'));
-      intersected.value = [];
-    }
-    closestRow.classList.add('selected');
-    intersected.value.push(closestRow);
-  }
+  // let hasSelected = intersected.value.length > 0;
+  // let closestRow = e.target.closest('tr');
+  // let isSelected = closestRow.classList.contains('selected');
+  // if (!isSelected) {
+  //   if (hasSelected) {
+  //     intersected.value.forEach((tr) => tr.classList.remove('selected'));
+  //     intersected.value = [];
+  //   }
+  //   closestRow.classList.add('selected');
+  //   intersected.value.push(closestRow);
+  // }
   x.value = e.clientX;
   y.value = e.clientY;
   isShowMenu.value = true;
@@ -88,7 +84,7 @@ onMounted(() => {
     @scroll.passive="handleOnScroll"
     @mousedown="handleMouseDown"
     @contextmenu.prevent="handleContextMenu"
-    class="draggable-container layout-browser"
+    class="draggable-container layout_browser"
     ref="draggable_container"
     id="draggable_container"
   >
@@ -102,7 +98,6 @@ onMounted(() => {
       :scrollInfo="scrollInfo"
       :intersected="intersected"
     />
-    <div id="bottom-line-container" class="bottom-line-container"></div>
   </div>
   <Teleport to="body">
     <div
@@ -126,13 +121,14 @@ onMounted(() => {
   position: sticky;
   top: 0;
 }
-.bottom-line-container {
-  font-size: 1rem;
-  position: fixed;
-  border-top: 0.75px solid;
-  bottom: 0;
-  background: var(--bg-panel);
-}
+/* .bottom-line-container { */
+/*   font-size: 1rem; */
+/*   position: fixed; */
+/*   width: 100%; */
+/*   border-top: 0.75px solid; */
+/*   bottom: 0; */
+/*   background: var(--bg-panel); */
+/* } */
 .drag-box {
   position: absolute;
   background-color: blue;

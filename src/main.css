@@ -45,19 +45,17 @@ body {
   justify-content: space-between;
   align-content: center;
   align-items: center;
-}
-
-.layout_sidebar {
-  background: var(--bg-sidebar);
-  border-right: 1px solid var(--border);
-  color: var(--text-primary);
-  width: 15%;
-  min-width: 100px;
-  height: 90vh;
-  position: sticky;
-  overflow: clip;
-  flex-shrink: 0;
-  background: var(--bg-mantle);
+  .left_header {
+    display: inline-flex;
+    gap: 10px;
+  }
+  .bread_crumbs_container {
+    width: 40%;
+    border: 1px solid darkgray;
+    position: relative;
+  }
+  .search-container {
+  }
 }
 
 .layout_main {
@@ -68,8 +66,72 @@ body {
   gap: 10px;
   overflow: hidden;
   height: 100%;
+  .layout_sidebar {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    color: var(--text-primary);
+
+    min-width: 100px;
+    position: sticky;
+    overflow: auto;
+    height: calc(100% - 2rem);
+    background: var(--bg-mantle);
+    ::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 10px;
+      height: 100%;
+      cursor: ew-resize;
+    }
+    .top-sidebar {
+      flex-grow: 1;
+      overflow: auto;
+    }
+    .bottom-sidebar {
+      max-height: 10vh;
+      height: fit-content;
+      width: 100%;
+
+      button {
+        border: 0;
+      }
+    }
+  }
+  .layout_browser {
+    min-height: 0;
+    height: 100%;
+    position: relative;
+    flex: 1;
+    #progressbar_container {
+      position: sticky;
+      top: 0;
+      display: flex;
+    }
+    .directory-view {
+      overflow-x: auto;
+      width: 100%;
+      min-width: 100%;
+      position: relative;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+    }
+  }
 }
 
+.bottom-line-container {
+  font-size: 1rem;
+  position: fixed;
+  width: auto;
+  border-top: 0.75px solid;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background: var(--bg-panel);
+}
 /* Inputs */
 input,
 textarea,
@@ -257,15 +319,6 @@ progress::-moz-progress-bar {
 /*   backdrop-filter: blur(30px) saturate(180%); */
 /*   -webkit-backdrop-filter: blur(12px) saturate(180%); */
 /* } */
-
-.layout_browser {
-  min-height: 0;
-  height: 100%;
-}
-.layout_header,
-.layout_sidebar,
-.layout_main {
-}
 
 .container {
   border: 0.75px solid gray;

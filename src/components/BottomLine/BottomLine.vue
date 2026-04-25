@@ -9,8 +9,6 @@ const props = defineProps([
 ]);
 
 const loadedItems = computed(() => {
-  // let total = sorted_items.value.length;
-  // let loaded = displaying_items.value.length;
   return `${props.itemsLength} items / ${props.loadedLength} items`;
 });
 const state = computed(() => {
@@ -22,14 +20,13 @@ const state = computed(() => {
         ? `selected ${props.selectedLength} items`
         : '';
 });
-const bottomLine = useTemplateRef('bottomLine');
-const setBottomLineWidth = () => {
-  let containerWidth = bottomLine.value.parentElement.parentElement.clientWidth;
-  bottomLine.value.style.width = containerWidth + 'px';
-};
-onMounted(() => {
-  setBottomLineWidth();
-});
+// const setBottomLineWidth = () => {
+//   let containerWidth = bottomLine.value.parentElement.parentElement.clientWidth;
+//   bottomLine.value.style.width = containerWidth + 'px';
+// };
+// onMounted(() => {
+//   setBottomLineWidth();
+// });
 </script>
 <template>
   <div ref="bottomLine" class="bottom-line">

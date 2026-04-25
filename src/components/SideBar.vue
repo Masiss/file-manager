@@ -62,36 +62,6 @@ hr {
   width: 80%;
   margin: 10px auto;
 }
-aside {
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  width: auto;
-  height: 100%;
-  border-collapse: collapse;
-  ::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 10px;
-    height: 100%;
-    cursor: ew-resize;
-  }
-  .top-sidebar {
-    flex-grow: 1;
-    overflow: auto;
-  }
-
-  .bottom-sidebar {
-    height: 10vh;
-    width: 100%;
-
-    button {
-      border: 0;
-    }
-  }
-}
 .tree {
   --spacing: 5rem;
   --radius: 10px;

@@ -12,12 +12,14 @@
     "app": {
         "windows": [
             {
+                "label": "main",
                 "title": "file-manager",
                 "width": 800,
                 "height": 600,
                 "dragDropEnabled": false,
                 "decorations": false,
-                "transparent": true
+                "transparent": true,
+                "url": "index.html"
             }
         ],
         "security": {

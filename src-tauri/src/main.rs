@@ -4,10 +4,12 @@ mod commands;
 use crate::commands::{
     config::builder::{generate_config, get_quick_access},
     fs::{directory, disk},
+    operation::operation::{self, AppState},
     search::trigram::{builder::generate_index, search::search},
     utils::check_path,
 };
 
+use tauri::Manager;
 use tauri::ipc::Invoke;
 fn all_commands() -> fn(Invoke) -> bool {
     tauri::generate_handler![
@@ -17,6 +19,9 @@ fn all_commands() -> fn(Invoke) -> bool {
         directory::load_metadata,
         directory::load_path,
         directory::sort_column,
+        operation::check_exist,
+        operation::copy,
+        operation::cancel,
         get_quick_access,
         generate_index,
         search,
@@ -33,6 +38,7 @@ fn main() {
                 generate_config();
                 generate_index();
             });
+            app.manage(AppState::default());
             Ok(())
         })
         .invoke_handler(all_commands())

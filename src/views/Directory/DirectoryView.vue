@@ -20,7 +20,7 @@ const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
 const pathStore = usePathStore();
 const table = useTemplateRef('table');
 const emits = defineEmits(['line-click']);
-const items = ref(props.items);
+const items = toRef(props, 'items');
 const {
   displaying_items,
   isProgressing,

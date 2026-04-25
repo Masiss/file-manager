@@ -98,7 +98,6 @@ export function useDragSelect(draggable_container) {
     const el = e.target.closest('tbody tr');
     intersected.value = el ? [el] : [];
   };
-  const handleClick = () => {};
   watch(
     intersected,
     (newVal, oldVal) => {
@@ -139,6 +138,5 @@ export function useDragSelect(draggable_container) {
     handleMouseMove,
     handleMouseUp,
     intersected,
-    handleClick,
   };
 }

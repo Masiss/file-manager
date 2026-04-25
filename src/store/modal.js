@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, shallowRef } from 'vue';
-import ConfigModal from '../components/modal/ConfigModal.vue';
+import ConfigModal from '../components/Modal/ConfigModal.vue';
+import ProgressModal from '../components/Modal/ProgressModal.vue';
 export const useModalStore = defineStore('modal', () => {
   const isShowing = ref(false);
   const type = shallowRef();
@@ -10,6 +11,9 @@ export const useModalStore = defineStore('modal', () => {
     if (modalType === 'config') {
       title.value = modalType.toUpperCase();
       type.value = ConfigModal;
+    } else if (modalType === 'progress') {
+      title.value = modalType.toUpperCase();
+      type.value = ProgressModal;
     }
   }
   function close() {
