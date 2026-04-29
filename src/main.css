@@ -61,8 +61,8 @@ body {
 .layout_main {
   background: var(--bg-app);
   width: 100vw;
-  display: flex;
   position: relative;
+  display: flex;
   flex-direction: row;
   gap: 10px;
   overflow: hidden;
@@ -104,7 +104,7 @@ body {
   }
   .layout_browser {
     min-height: 0;
-    height: 100%;
+    height: calc(100% - 2rem);
     position: relative;
     flex: 1;
     #progressbar_container {
@@ -357,6 +357,7 @@ progress::-moz-progress-bar {
   .toast-title {
     font-size: 1rem;
     flex-grow: 1;
+    font-weight: 700;
   }
   .toast_close-button {
     background: none;
@@ -393,4 +394,8 @@ progress::-moz-progress-bar {
 .disabled-element {
   pointer-events: none;
   opacity: 0.5; /* Optional visual cue */
+}
+.flex-row {
+  display: flex;
+  flex-direction: row;
 }

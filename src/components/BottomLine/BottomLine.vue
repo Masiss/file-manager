@@ -37,7 +37,8 @@ const state = computed(() => {
 <style scoped>
 .bottom-line {
   width: 100%;
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
   justify-content: space-between;
   div {
     padding: 0 15px;

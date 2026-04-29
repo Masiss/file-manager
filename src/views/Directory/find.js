@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 export function useFind(lines, itemList, load_more) {
   const foundItems = ref([]);
   const currentItemIndex = ref(null);
@@ -7,12 +7,16 @@ export function useFind(lines, itemList, load_more) {
   const findInPage = (e) => {
     isFinding.value = true;
     let input = e.target.value;
+    console.log(input);
+    console.log(currentItemIndex.value);
     foundItems.value = itemList.value.filter((item) =>
       item.split('\\').pop().includes(input),
     );
     if (foundItems.value.length === 0) return;
     currentItemIndex.value = 0;
+    console.log(currentItemIndex.value);
   };
+
   const nextMatching = () => {
     currentItemIndex.value =
       currentItemIndex.value === foundItems.value.length - 1
@@ -32,14 +36,25 @@ export function useFind(lines, itemList, load_more) {
     isFinding.value = false;
     lines.value?.forEach((line) => line.classList.remove('selected'));
   };
+  const currentItem = computed(() => foundItems.value[currentItemIndex.value]);
   watch(
-    () => currentItemIndex.value,
+    () => currentItem.value,
     (val) => {
       if (val === null) return;
-      let path = foundItems.value[val];
-      if (!jumpToEl(path)) scrollToItem(path);
+      if (!jumpToEl(currentItem.value)) scrollToItem(currentItem.value);
     },
   );
+  // watch(
+  //   () => currentItemIndex.value,
+  //   (val) => {
+  //     if (val === null) return;
+  //     console.log(val);
+  //     console.log(currentItemIndex.value);
+  //     let path = foundItems.value[val];
+  //     console.log(path);
+  //     if (!jumpToEl(path)) scrollToItem(path);
+  //   },
+  // );
   const jumpToEl = (path) => {
     const el = lines.value.find((line) => line.dataset.path === path);
     if (!el) return false;

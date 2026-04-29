@@ -5,13 +5,15 @@ import { usePathStore } from './path';
 import { emitTo, listen, once } from '@tauri-apps/api/event';
 import { useModalStore } from './modal';
 import { defineStore } from 'pinia';
+import { useToastStore } from './toast.js';
 export const useMenuStore = defineStore('menu', () => {
   const selectingItems = ref([]);
   const isMenuShow = ref(false);
   const x = ref(null);
   const y = ref(null);
-  const clipboard = ref([]);
+  const clipboard = ref({ item_list: [], type: null });
 
+  const toastStore = useToastStore();
   const modalStore = useModalStore();
   const pathStore = usePathStore();
   const menuItems = ref([
@@ -49,7 +51,7 @@ export const useMenuStore = defineStore('menu', () => {
     {
       name: 'Paste',
       action: () => paste(),
-      visible: () => clipboard.value.length > 0,
+      visible: () => clipboard.value.item_list.length > 0,
     },
     {
       name: 'Properties',
@@ -100,12 +102,17 @@ export const useMenuStore = defineStore('menu', () => {
     return menuItems.value.filter((item) => !item.visible || item.visible());
   });
   const copy = () => {
-    clipboard.value = [
-      ...selectingItems.value.map((item) => item.dataset.path),
-    ];
+    clipboard.value = {
+      item_list: [...selectingItems.value.map((item) => item.dataset.path)],
+      type: 'copy',
+    };
+    console.log(clipboard.value);
   };
   const cut = () => {
-    copy();
+    clipboard.value = {
+      item_list: [...selectingItems.value.map((item) => item.dataset.path)],
+      type: 'cup',
+    };
   };
   const renamingPath = ref(null);
   const rename = async () => {
@@ -116,10 +123,16 @@ export const useMenuStore = defineStore('menu', () => {
     renamingPath.value = path;
     const preventBubble = (e) => e.stopPropagation();
     const confirmRename = async () => {
-      // await invoke('rename', {
-      //   sourceStr: renamingPath.value,
-      //   newName: document.querySelector('td[contenteditable="true"]').innerText,
-      // });
+      let newName = document.querySelector(
+        'td[contenteditable="true"]',
+      ).innerText;
+      await invoke('rename', {
+        sourceStr: renamingPath.value,
+        newName: newName,
+      });
+      toastStore.addToast('inform', 'Success', {
+        info: `Renamed ${old_name} to ${newName}`,
+      });
     };
     const keydownConfirm = (e) => {
       // e.preventDefault();
@@ -176,23 +189,22 @@ export const useMenuStore = defineStore('menu', () => {
   };
   const createProgressWindow = async (fn) => {
     let existed = await WebviewWindow.getByLabel('progress');
-    let win;
     if (!existed) {
-      win = new WebviewWindow('progress', {
+      new WebviewWindow('progress', {
         label: 'progress',
         url: '../../../progress.html',
         width: 400,
         height: 250,
       });
-    } else win = existed;
+    }
     await once('progresswindow-ready');
     await fn();
-    return win;
   };
   const paste = async () => {
-    if (clipboard.value.length === 0) return;
+    if (clipboard.value.item_list.length === 0 || !clipboard.value.type) return;
+    let type = clipboard.value.type;
     let is_exist = await invoke('check_exist', {
-      sourceList: clipboard.value,
+      sourceList: clipboard.value.item_list,
       destDir: pathStore.current_path,
     });
     if (is_exist.conflict) {
@@ -204,14 +216,16 @@ export const useMenuStore = defineStore('menu', () => {
       await createProgressWindow(fn);
     } else if (is_exist === 'ok') {
       let taskId = crypto.randomUUID();
+      let command = type === 'copy' ? 'copy' : 'cut';
       let fn = async () => {
-        emitTo('progress', 'progress-started');
-        await invoke('copy', {
-          sourceList: clipboard.value,
+        await emitTo('progress', 'progress-started');
+        await invoke(command, {
+          sourceList: clipboard.value.item_list,
           destDir: pathStore.current_path,
           taskId: taskId,
         });
       };
+      toastStore.addToast('progress', type.toUpperCase(), { task_id: taskId });
       await createProgressWindow(fn);
     }
   };
@@ -230,6 +244,7 @@ export const useMenuStore = defineStore('menu', () => {
     if (!e.target.closest('div#menu') || !e.target.closest('li.menu-item'))
       isMenuShow.value = false;
     else nextTick(() => (isMenuShow.value = false));
+    window.removeEventListener('click', closeContextMenu);
   }
   return {
     menu,

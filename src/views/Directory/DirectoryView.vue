@@ -10,19 +10,24 @@ import {
   watch,
 } from 'vue';
 import { format_size, set_item_icon } from './utils.js';
-import { useFind } from './find.js';
 import Icon from '../../components/Icon.vue';
 import { useInfinityScroll } from './infinityScroll.js';
 import { useResizing } from '../../composables/resize.js';
 import BottomLine from '../../components/BottomLine/BottomLine.vue';
 import { invoke } from '@tauri-apps/api/core';
 import { useMenuStore } from '../../store/menu.js';
+import FindBox from '../../components/FindBox.vue';
 const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
 const pathStore = usePathStore();
 const menuStore = useMenuStore();
 const table = useTemplateRef('table');
 const emits = defineEmits(['line-click']);
-const items = ref(props.items);
+const items = ref([]);
+watch(
+  () => props.items,
+  () => (items.value = props.items),
+  { immediate: true },
+);
 const {
   displaying_items,
   isProgressing,
@@ -32,14 +37,6 @@ const {
 } = useInfinityScroll(items, table, toRef(props, 'scrollInfo'));
 const ths = ref();
 const lines = useTemplateRef('lines');
-const {
-  handleKeydown,
-  findInPage,
-  nextMatching,
-  previousMatching,
-  closeContainer,
-  isFinding,
-} = useFind(lines, sorted_items, load_more);
 const isAsc = ref(false);
 const sortingCol = ref(null);
 const sortColumn = async (colName) => {
@@ -76,7 +73,6 @@ const cols = ref([
   },
 ]);
 onMounted(() => {
-  document.addEventListener('keydown', handleKeydown);
   ths.value = table.value.querySelectorAll('th');
   let cols = Array.from(ths.value).map((th) => ({
     width: th.getBoundingClientRect().width,
@@ -111,6 +107,7 @@ const isSelected = (path) => {
 const isRenaming = (path) => {
   return path === menuStore.renamingPath;
 };
+const isFinding = ref(null);
 </script>
 <template>
   <div class="directory-view">
@@ -124,31 +121,12 @@ const isRenaming = (path) => {
         {{ current_index }}
       </progress>
     </Teleport>
-    <div
-      v-if="isFinding"
-      id="findPanel"
-      class="page-search-container container"
-    >
-      <div class="page-search-item">
-        <input @input="findInPage" type="text" placeholder="Type..." />
-      </div>
-      <div class="page-search-item">
-        <button @click="previousMatching">
-          <Icon icon="arrow-left-circle" icon-size="12" />
-        </button>
-      </div>
-      <div class="page-search-item">
-        <button @click="nextMatching">
-          <Icon icon="arrow-right-circle" icon-size="12" />
-        </button>
-      </div>
-
-      <div class="page-search-item">
-        <button @click="closeContainer">
-          <Icon icon="x" icon-size="12" />
-        </button>
-      </div>
-    </div>
+    <FindBox
+      :lines="lines"
+      :sorted_items="sorted_items"
+      :load_more="load_more"
+      @isFinding="(state) => (isFinding = state)"
+    />
     <table ref="table" class="table-item">
       <thead>
         <tr>
@@ -197,8 +175,8 @@ const isRenaming = (path) => {
         :itemsLength="sorted_items.length"
         :loadedLength="displaying_items.length"
         :isDragging="props.isDragging"
-        :isFinding="isFinding"
         :selectedLength="intersected.length"
+        :isFinding="isFinding"
       />
     </Teleport>
   </div>

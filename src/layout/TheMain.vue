@@ -58,20 +58,20 @@ onMounted(() => {
     @scroll.passive="handleOnScroll"
     @mousedown="handleMouseDown"
     @contextmenu.prevent="menuStore.handleContextMenu"
-    class="draggable-container layout_browser"
+    class="draggable-container layout_browser container"
     ref="draggable_container"
     id="draggable_container"
   >
     <div ref="progressbar_container" id="progressbar_container"></div>
     <component
       ref="viewComponent"
-      class="container"
       :is="view"
       :items="items"
       :isDragging="is_dragging"
       :scrollInfo="scrollInfo"
       :intersected="intersected"
     />
+    <div id="bottom-line-container" class="bottom-line-container"></div>
   </div>
   <Teleport defer to="#toast-list-container">
     <Toast />
