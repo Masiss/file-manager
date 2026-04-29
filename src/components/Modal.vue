@@ -11,7 +11,7 @@ const modal = useModalStore();
         <Icon icon="x" icon-size="12" />
       </button>
     </div>
-    <component :is="modal.type" v-if="modal.type" />
+    <component :is="modal.type" v-if="modal.type" :data="modal.modalInfo" />
   </div>
 </template>
 <style scoped>

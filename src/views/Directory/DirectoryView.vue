@@ -16,11 +16,13 @@ import { useInfinityScroll } from './infinityScroll.js';
 import { useResizing } from '../../composables/resize.js';
 import BottomLine from '../../components/BottomLine/BottomLine.vue';
 import { invoke } from '@tauri-apps/api/core';
+import { useMenuStore } from '../../store/menu.js';
 const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
 const pathStore = usePathStore();
+const menuStore = useMenuStore();
 const table = useTemplateRef('table');
 const emits = defineEmits(['line-click']);
-const items = toRef(props, 'items');
+const items = ref(props.items);
 const {
   displaying_items,
   isProgressing,
@@ -106,6 +108,9 @@ const showCheckbox = computed(() => {
 const isSelected = (path) => {
   return props.intersected?.some((el) => el.dataset.path === path) ?? false;
 };
+const isRenaming = (path) => {
+  return path === menuStore.renamingPath;
+};
 </script>
 <template>
   <div class="directory-view">
@@ -172,10 +177,13 @@ const isSelected = (path) => {
             <input :checked="isSelected(item.path)" type="checkbox" />
           </td>
           <td class="name-cell">
-            <!-- <span> -->
-            <Icon :icon="set_item_icon(item.file_type)" />
-            {{ item.name }}
-            <!-- </span> -->
+            <Icon
+              :icon="set_item_icon(item.file_type)"
+              v-if="menuStore.renamingPath !== item.path"
+            />
+            <span class="name-span" :contenteditable="isRenaming(item.path)">
+              {{ item.name }}
+            </span>
           </td>
           <td>{{ item.created_at }}</td>
           <td>{{ item.last_modified }}</td>
@@ -197,8 +205,12 @@ const isSelected = (path) => {
 </template>
 <style scoped>
 .name-cell {
-  gap: 5px;
 }
+.name-span {
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
 #loading_progressbar {
   width: 100%;
   height: 5px;

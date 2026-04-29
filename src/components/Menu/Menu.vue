@@ -1,14 +1,13 @@
 <script setup>
-import { ref, watch, defineProps, computed, toRef, onMounted } from 'vue';
-import { useMenu } from './menu.js';
-const props = defineProps(['selectedItems']);
-const { menu, handleClick } = useMenu(toRef(props, 'selectedItems'));
+import { ref, watch, defineProps } from 'vue';
+import { useMenuStore } from '../../store/menu.js';
+const menuStore = useMenuStore();
 </script>
 <template>
-  <div class="container">
+  <div id="menu" class="container">
     <ul>
-      <li class="menu-item" v-for="item in menu">
-        <span @click="handleClick(item.action)">{{ item.name }}</span>
+      <li class="menu-item" v-for="item in menuStore.menu">
+        <span @click="menuStore.handleClick(item.action)">{{ item.name }}</span>
       </li>
     </ul>
   </div>

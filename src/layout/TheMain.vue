@@ -14,6 +14,9 @@ import SideBar from '../components/SideBar.vue';
 import { useDragSelect } from './dragSelect.js';
 import Menu from '../components/Menu/Menu.vue';
 import Icon from '../components/Icon.vue';
+import Toast from '../components/Toast.vue';
+import { useMenuStore } from '../store/menu.js';
+const menuStore = useMenuStore();
 const pathStore = usePathStore();
 const items = ref([]);
 const view = shallowRef('');
@@ -39,35 +42,6 @@ const handleOnScroll = (e) => {
 
   scrollInfo.value = { scrollTop, clientHeight, scrollHeight };
 };
-const isShowMenu = ref(false);
-const x = ref();
-const y = ref();
-const selectingPathList = computed(() => {
-  return intersected.value?.forEach((item) => item.dataset.path);
-});
-const handleContextMenu = (e) => {
-  // let hasSelected = intersected.value.length > 0;
-  // let closestRow = e.target.closest('tr');
-  // let isSelected = closestRow.classList.contains('selected');
-  // if (!isSelected) {
-  //   if (hasSelected) {
-  //     intersected.value.forEach((tr) => tr.classList.remove('selected'));
-  //     intersected.value = [];
-  //   }
-  //   closestRow.classList.add('selected');
-  //   intersected.value.push(closestRow);
-  // }
-  x.value = e.clientX;
-  y.value = e.clientY;
-  isShowMenu.value = true;
-  nextTick(() => {
-    window.addEventListener('click', closeContextMenu);
-  });
-};
-const closeContextMenu = (e) => {
-  isShowMenu.value = false;
-};
-const viewComponent = useTemplateRef('viewComponent');
 
 onMounted(() => {
   scrollInfo.value = {
@@ -83,7 +57,7 @@ onMounted(() => {
   <div
     @scroll.passive="handleOnScroll"
     @mousedown="handleMouseDown"
-    @contextmenu.prevent="handleContextMenu"
+    @contextmenu.prevent="menuStore.handleContextMenu"
     class="draggable-container layout_browser"
     ref="draggable_container"
     id="draggable_container"
@@ -99,6 +73,9 @@ onMounted(() => {
       :intersected="intersected"
     />
   </div>
+  <Teleport defer to="#toast-list-container">
+    <Toast />
+  </Teleport>
   <Teleport to="body">
     <div
       v-show="is_dragging"
@@ -110,9 +87,8 @@ onMounted(() => {
   <Teleport to="body">
     <Menu
       class="menu"
-      v-show="isShowMenu"
-      :style="{ left: x + 'px', top: y + 'px' }"
-      :selectedItems="intersected"
+      v-if="menuStore.isMenuShow"
+      :style="{ left: menuStore.x + 'px', top: menuStore.y + 'px' }"
     />
   </Teleport>
 </template>
@@ -121,14 +97,6 @@ onMounted(() => {
   position: sticky;
   top: 0;
 }
-/* .bottom-line-container { */
-/*   font-size: 1rem; */
-/*   position: fixed; */
-/*   width: 100%; */
-/*   border-top: 0.75px solid; */
-/*   bottom: 0; */
-/*   background: var(--bg-panel); */
-/* } */
 .drag-box {
   position: absolute;
   background-color: blue;

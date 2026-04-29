@@ -1,5 +1,6 @@
 import { ref, onMounted, provide, watch, nextTick } from 'vue';
 import { useThrottle } from '../views/Directory/utils';
+import { useMenuStore } from '../store/menu';
 export function useDragSelect(draggable_container) {
   const is_dragging = ref(false);
   const box = ref(null);
@@ -8,7 +9,7 @@ export function useDragSelect(draggable_container) {
   let box_start = {};
   let box_end = { x: 0, y: 0 };
   let start_scroll_top = 0;
-  const { throttle } = useThrottle();
+  const menuStore = useMenuStore();
 
   const handleMouseDown = (e) => {
     if (e.button !== 0) return;
@@ -111,6 +112,7 @@ export function useDragSelect(draggable_container) {
         const input = el.querySelector('input');
         if (input) input.checked = true;
       });
+      menuStore.selectingItems = newVal;
     },
     { deep: false },
   );
