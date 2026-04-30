@@ -16,7 +16,7 @@ import { useResizing } from '../../composables/resize.js';
 import BottomLine from '../../components/BottomLine/BottomLine.vue';
 import { invoke } from '@tauri-apps/api/core';
 import { useMenuStore } from '../../store/menu.js';
-import FindBox from '../../components/FindBox.vue';
+import FindBox from '../../components/FindBox/FindBox.vue';
 const props = defineProps(['items', 'isDragging', 'scrollInfo', 'intersected']);
 const pathStore = usePathStore();
 const menuStore = useMenuStore();

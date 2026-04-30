@@ -28,8 +28,6 @@ onUnmounted(() => {
   <main class="layout_main">
     <TheMain></TheMain>
     <!-- <button width="100%" type="button" @click="store.$reset()">Reset</button> -->
-    <!-- <div id="bottom-line-container" class="bottom-line-container"></div> -->
-    <div id="toast-list-container" class="toast-list-container"></div>
   </main>
   <Teleport to="body">
     <Modal v-show="modal.isShowing" />

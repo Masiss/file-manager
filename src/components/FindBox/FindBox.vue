@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, toRef, watch } from 'vue';
-import { useFind } from '../views/Directory/find.js';
-import Icon from './Icon.vue';
+import { useFind } from './find.js';
+import Icon from '../Icon.vue';
 const props = defineProps(['lines', 'sorted_items', 'load_more']);
 const emits = defineEmits(['isFinding']);
 

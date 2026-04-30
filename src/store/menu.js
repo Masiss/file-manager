@@ -102,11 +102,11 @@ export const useMenuStore = defineStore('menu', () => {
     return menuItems.value.filter((item) => !item.visible || item.visible());
   });
   const copy = () => {
+    console.log('copy');
     clipboard.value = {
       item_list: [...selectingItems.value.map((item) => item.dataset.path)],
       type: 'copy',
     };
-    console.log(clipboard.value);
   };
   const cut = () => {
     clipboard.value = {
@@ -241,8 +241,10 @@ export const useMenuStore = defineStore('menu', () => {
     });
   }
   function closeContextMenu(e) {
-    if (!e.target.closest('div#menu') || !e.target.closest('li.menu-item'))
-      isMenuShow.value = false;
+    e.preventDefault();
+    e.stopPropagation();
+    let menu = document.querySelector('div#menu');
+    if (!menu.contains(e.target)) isMenuShow.value = false;
     else nextTick(() => (isMenuShow.value = false));
     window.removeEventListener('click', closeContextMenu);
   }

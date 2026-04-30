@@ -16,6 +16,8 @@ import Menu from '../components/Menu/Menu.vue';
 import Icon from '../components/Icon.vue';
 import Toast from '../components/Toast.vue';
 import { useMenuStore } from '../store/menu.js';
+import { useToastStore } from '../store/toast.js';
+const toastStore = useToastStore();
 const menuStore = useMenuStore();
 const pathStore = usePathStore();
 const items = ref([]);
@@ -71,11 +73,12 @@ onMounted(() => {
       :scrollInfo="scrollInfo"
       :intersected="intersected"
     />
+    <div id="toast-list-container" class="toast-list-container">
+      <Toast v-if="toastStore.isPopupToast" />
+    </div>
     <div id="bottom-line-container" class="bottom-line-container"></div>
   </div>
-  <Teleport defer to="#toast-list-container">
-    <Toast />
-  </Teleport>
+
   <Teleport to="body">
     <div
       v-show="is_dragging"

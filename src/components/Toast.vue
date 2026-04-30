@@ -1,17 +1,9 @@
 <script setup>
-import { onMounted, watch } from 'vue';
 import { useToastStore } from '../store/toast.js';
 import Icon from './Icon.vue';
 import InformToast from './Toast/InformToast.vue';
 import ProgressToast from './Toast/ProgressToast.vue';
 const toastStore = useToastStore();
-watch(
-  () => toastStore.toast_list,
-  () => console.log(toastStore.toast_list),
-  {
-    immediate: true,
-  },
-);
 const getToastType = (type) => {
   switch (type) {
     case 'inform':
@@ -23,14 +15,18 @@ const getToastType = (type) => {
 };
 </script>
 <template>
-  <div class="toast-list" v-if="toastStore.toast_list.size > 0">
+  <div class="toast-list">
     <div
-      v-for="[index, toast] in toastStore.toast_list"
+      v-for="[index, toast] in toastStore.filtered_toast"
       class="toast-container container"
     >
       <div class="toast-top">
         <span class="toast-title">{{ toast.title }}</span>
-        <button class="toast_close-button">
+        <button
+          v-if="!toastStore.isShowAll"
+          class="toast_close-button"
+          @click.prevent="toastStore.hide(index)"
+        >
           <Icon icon="chevron-down" icon-size="1rem" />
         </button>
       </div>
