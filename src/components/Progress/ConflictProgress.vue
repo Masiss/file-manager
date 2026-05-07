@@ -8,10 +8,13 @@ const props = defineProps(['data']);
       <div style="display: flex; flex-direction: row">
         <div style="display: flex; flex-direction: column">
           <Icon icon="file" />
-          <span> {{ file }} </span>
+          <span> {{ props.data.fileList }} </span>
         </div>
         <div>
-          <span>Existed file named {{ file }} at {{ props.data.destDir }}</span>
+          <span
+            >Existed file named {{ props.data.fileList }} at
+            {{ props.data.dest_dir }}</span
+          >
         </div>
       </div>
       <div style="display: flex; flex-direction: row; justify-content: end">

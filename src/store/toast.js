@@ -47,7 +47,6 @@ export const useToastStore = defineStore('toast', () => {
       pauseFn: pauseFn,
       visible: true,
     });
-    console.log(toast_list.value);
   }
   function updateProgressToast(task_id, copy_progress) {
     let toast = toast_list.value.get(task_id);

@@ -7,7 +7,9 @@ const menuStore = useMenuStore();
   <div id="menu" class="container">
     <ul>
       <li class="menu-item" v-for="item in menuStore.menu">
-        <span @click="menuStore.handleClick(item.action)">{{ item.name }}</span>
+        <span @click.prevent="menuStore.handleClick(item.action)">{{
+          item.name
+        }}</span>
       </li>
     </ul>
   </div>

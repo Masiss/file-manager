@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod commands;
 use crate::commands::{
-    config::builder::{generate_config, get_quick_access},
+    config::builder::{add_quick_access, generate_config, get_quick_access},
     fs::{directory, disk},
     operation::operation::{self, AppState},
     search::trigram::{builder::generate_index, search::search},
@@ -24,6 +24,9 @@ fn all_commands() -> fn(Invoke) -> bool {
         operation::cut,
         operation::cancel,
         operation::rename,
+        operation::archive,
+        operation::extract,
+        add_quick_access,
         get_quick_access,
         generate_index,
         search,
@@ -33,6 +36,7 @@ fn all_commands() -> fn(Invoke) -> bool {
 }
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             // Example: Spawn an async task, manage state, etc.

@@ -6,6 +6,7 @@ import { emitTo, listen, once } from '@tauri-apps/api/event';
 import { useModalStore } from './modal';
 import { defineStore } from 'pinia';
 import { useToastStore } from './toast.js';
+import { useConfigStore } from './config.js';
 export const useMenuStore = defineStore('menu', () => {
   const selectingItems = ref([]);
   const isMenuShow = ref(false);
@@ -13,6 +14,7 @@ export const useMenuStore = defineStore('menu', () => {
   const y = ref(null);
   const clipboard = ref({ item_list: [], type: null });
 
+  const configStore = useConfigStore();
   const toastStore = useToastStore();
   const modalStore = useModalStore();
   const pathStore = usePathStore();
@@ -36,6 +38,11 @@ export const useMenuStore = defineStore('menu', () => {
     {
       name: 'Run as administrator',
       action: () => openAsAdmin(),
+      visible: () => isSelecting(),
+    },
+    {
+      name: 'Add to quick access',
+      action: () => addQuickAccess(),
       visible: () => isSelecting(),
     },
     {
@@ -101,12 +108,44 @@ export const useMenuStore = defineStore('menu', () => {
     console.log(selectingItems.value);
     return menuItems.value.filter((item) => !item.visible || item.visible());
   });
+  const addQuickAccess = () => {
+    configStore.addQuickAccess(selectingItems.value[0]);
+  };
   const copy = () => {
     console.log('copy');
     clipboard.value = {
       item_list: [...selectingItems.value.map((item) => item.dataset.path)],
       type: 'copy',
     };
+  };
+  const archive = async (
+    archive_name,
+    archive_type,
+    archive_level,
+    password,
+  ) => {
+    let taskId = crypto.randomUUID();
+    await createProgressWindow();
+
+    await invoke('archive', {
+      taskId: taskId,
+      file: selectingItems.value.map((tr) => tr.dataset.path),
+      ...(archive_name && { archiveName: archive_name }),
+      ...(password && { password: password }),
+      ...(archive_type && { archiveType: archive_type }),
+      ...(archive_level && { archiveLevel: archive_level }),
+    });
+    await listen('message', (e) => console.log(e));
+  };
+  const extract = async (dest, password) => {
+    let taskId = crypto.randomUUID();
+    createProgressWindow();
+    await invoke('extract', {
+      taskId: taskId,
+      file: selectingItems.value[0],
+      destDir: dest ? dest : pathStore.current_path,
+      ...(password && { password: password }),
+    });
   };
   const cut = () => {
     clipboard.value = {
@@ -187,7 +226,7 @@ export const useMenuStore = defineStore('menu', () => {
       cleanUp();
     };
   };
-  const createProgressWindow = async (fn) => {
+  const createProgressWindow = async () => {
     let existed = await WebviewWindow.getByLabel('progress');
     if (!existed) {
       new WebviewWindow('progress', {
@@ -198,7 +237,8 @@ export const useMenuStore = defineStore('menu', () => {
       });
     }
     await once('progresswindow-ready');
-    await fn();
+    // await fn();
+    return;
   };
   const paste = async () => {
     if (clipboard.value.item_list.length === 0 || !clipboard.value.type) return;
@@ -207,15 +247,22 @@ export const useMenuStore = defineStore('menu', () => {
       sourceList: clipboard.value.item_list,
       destDir: pathStore.current_path,
     });
+    let taskId = crypto.randomUUID();
     if (is_exist.conflict) {
       let fn = async () =>
         await emitTo('progress', 'progress-conflict', {
-          fileList: is_exist.conflict.file_list,
-          destDir: pathStore.current_path,
+          task_id: taskId,
+          file_list: is_exist.conflict.file_list,
+          dest_dir: pathStore.current_path,
         });
-      await createProgressWindow(fn);
+      toastStore.addToast('inform', 'Conflict', {
+        task_id: taskId,
+        file_list: is_exist.conflict.file_list,
+        dest_dir: pathStore.current_path,
+      });
+      await createProgressWindow();
+      await fn();
     } else if (is_exist === 'ok') {
-      let taskId = crypto.randomUUID();
       let command = type === 'copy' ? 'copy' : 'cut';
       let fn = async () => {
         await emitTo('progress', 'progress-started');
@@ -227,6 +274,7 @@ export const useMenuStore = defineStore('menu', () => {
       };
       toastStore.addToast('progress', type.toUpperCase(), { task_id: taskId });
       await createProgressWindow(fn);
+      await fn();
     }
   };
   const handleClick = (action) => {

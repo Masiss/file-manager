@@ -125,6 +125,9 @@ export const useConfigStore = defineStore('config', () => {
     });
     localStorage.setItem('config', JSON.stringify(config.value));
   }
+  function addQuickAccess(path) {
+    invoke('add_quick_accesss', { newPath: path });
+  }
   function set(categoryId, itemId, value) {
     const category = this.config.find((c) => c.id === categoryId);
     const item = category?.items.find((i) => i.id === itemId);
@@ -139,5 +142,5 @@ export const useConfigStore = defineStore('config', () => {
     if (!item.cssVar) return; // chỉ apply nếu có cssVar
     document.documentElement.style.setProperty(item.cssVar, item.value);
   };
-  return { config, get, save, set, init };
+  return { config, get, save, set, init, addQuickAccess };
 });

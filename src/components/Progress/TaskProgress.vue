@@ -1,10 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-import { listen } from '@tauri-apps/api/event';
 import { format_size } from '../../views/Directory/utils.js';
 import Icon from '../Icon.vue';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { invoke } from '@tauri-apps/api/core';
 const props = defineProps(['data']);
 </script>
 <template>
@@ -28,7 +24,7 @@ const props = defineProps(['data']);
     </div>
     <div class="progress-info">
       <div class="progress-bar-container">
-        <progress :value="data.copied" :max="data.total"></progress>
+        <progress :value="data.value" :max="data.total"></progress>
         <div
           style="
             display: flex;
@@ -37,11 +33,10 @@ const props = defineProps(['data']);
           "
         >
           <span
-            >{{ format_size(data.copied) }} /
-            {{ format_size(data.total) }}</span
+            >{{ format_size(data.value) }} / {{ format_size(data.total) }}</span
           >
           <span>
-            {{ ((data.copied / data.total) * 100).toFixed(3) }}% /100%
+            {{ ((data.value / data.total) * 100).toFixed(3) }}% /100%
           </span>
         </div>
       </div>

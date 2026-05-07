@@ -7,9 +7,10 @@ const toastStore = useToastStore();
 
 const props = defineProps(['data', 'pauseFn']);
 onMounted(() => {
-  listen('copy-progressing', (event) => {
-    let copy_progress = event.payload;
-    toastStore.updateProgressToast(copy_progress.task_id, copy_progress);
+  listen('task-progressing', (event) => {
+    let task_progress = event.payload;
+    toastStore.updateProgressToast(task_progress.task_id, task_progress);
+    console.log(event.payload);
   });
 });
 </script>
@@ -19,7 +20,7 @@ onMounted(() => {
       <span>coping file apdasnfas to amasfasf </span>
     </div>
     <div class="toast-progress">
-      <progress :value="props.data.copied" :max="props.data.total"></progress>
+      <progress :value="props.data.value" :max="props.data.total"></progress>
       <button class="toast_pause-button" @click="() => props.data.pauseFn?.()">
         <Icon icon="pause" icon-size="0.8rem" />
       </button>

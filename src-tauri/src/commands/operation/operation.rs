@@ -1,8 +1,17 @@
+use crate::commands::operation::archive_extract::{
+    create_sevenzip, create_tar, create_zip, decompress, decompress_7z,
+};
+
+use super::archive_extract;
 use anyhow::anyhow;
+use futures_util::{StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
-use std::fmt::format;
+
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{App, Emitter};
+use tauri::{AppHandle, Manager, State};
+use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::process::{CommandEvent, Output};
 use tokio::fs::{self, File, try_exists};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
 use tokio::select;
@@ -46,17 +55,16 @@ pub async fn check_exist(source_list: Vec<String>, dest_dir: String) -> Result<C
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-struct CopyProgress {
+pub struct TaskProgress {
     task_id: String,
-    file: String,
-    copied: u64,
+    value: u64,
     total: u64,
     done: bool,
 }
 
 #[derive(Default)]
 pub struct AppState {
-    task_info: Mutex<TaskInfo>,
+    pub task_info: Mutex<TaskInfo>,
 }
 
 #[derive(Default, Clone)]
@@ -64,7 +72,37 @@ struct TaskInfo {
     source_list: Vec<String>,
     dest_dir: String,
     task_id: String,
-    cancel_token: Option<CancellationToken>,
+    pub cancel_token: Option<CancellationToken>,
+}
+enum TaskType {
+    Copy {
+        source_list: Vec<String>,
+        dest_dir: String,
+        task_id: String,
+        cancel_token: Option<CancellationToken>,
+    },
+    Cut {
+        source_list: Vec<String>,
+        dest_dir: String,
+        task_id: String,
+        cancel_token: Option<CancellationToken>,
+    },
+    Archive {
+        source_list: Vec<String>,
+        dest_dir: String,
+        task_id: String,
+        cancel_token: Option<CancellationToken>,
+        archive_type: Option<String>,
+        archive_level: Option<i8>,
+        password: Option<String>,
+    },
+    Extract {
+        source_list: Vec<String>,
+        dest_dir: String,
+        task_id: String,
+        cancel_token: Option<CancellationToken>,
+        password: Option<String>,
+    },
 }
 #[tauri::command]
 pub async fn cancel(task_id: String, state: State<'_, AppState>) -> Result<(), String> {
@@ -76,20 +114,54 @@ pub async fn cancel(task_id: String, state: State<'_, AppState>) -> Result<(), S
 
     Ok(())
 }
+#[tauri::command]
 pub async fn start_task(
-    source_list: Vec<String>,
-    dest_dir: String,
-    task_id: String,
+    task_type: TaskType,
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let token = CancellationToken::new();
-    *state.task_info.lock().await = TaskInfo {
-        source_list,
-        dest_dir,
-        task_id,
-        cancel_token: Some(token),
-    };
+    match task_type {
+        TaskType::Copy {
+            source_list,
+            dest_dir,
+            task_id,
+            cancel_token,
+        } => copy(source_list, dest_dir, task_id, app, state).await?,
+        TaskType::Cut {
+            source_list,
+            dest_dir,
+            task_id,
+            cancel_token,
+        } => cut(source_list, dest_dir, task_id, app, state).await?,
+        TaskType::Archive {
+            source_list,
+            dest_dir,
+            task_id,
+            cancel_token,
+            archive_type,
+            archive_level,
+            password,
+        } => {
+            archive(
+                task_id,
+                source_list,
+                dest_dir,
+                archive_type,
+                archive_level,
+                password,
+                app,
+                state,
+            )
+            .await?
+        }
+        TaskType::Extract {
+            source_list,
+            dest_dir,
+            task_id,
+            cancel_token,
+            password,
+        } => extract(task_id, source_list, dest_dir, password, app).await?,
+    }
 
     Ok(())
 }
@@ -134,7 +206,7 @@ pub async fn copy_files(
 
                            tokio::fs::remove_file(file).await?;
                        }
-                       app.emit("copy-close","").ok();
+                       app.emit("task-close","").ok();
                        writer.flush().await?;
                        return Err(anyhow!("cancelled"))
 
@@ -151,11 +223,10 @@ pub async fn copy_files(
                    copied += n as u64;
                    println!("copying");
                    app.emit(
-                       "copy-progressing",
-                       CopyProgress {
+                       "task-progressing",
+                       TaskProgress {
                        task_id: task_id.to_string(),
-                           file: file_name.clone(),
-                           copied,
+                           value:copied,
                            total,
                            done: false,
                        },
@@ -167,11 +238,10 @@ pub async fn copy_files(
             //copy done
             writer.flush().await?;
             app.emit(
-                "copy-progressing",
-                CopyProgress {
+                "task-progressing",
+                TaskProgress {
                     task_id: task_id.clone(),
-                    file: file_name.clone(),
-                    copied,
+                    value: copied,
                     total,
                     done: true,
                 },
@@ -231,5 +301,104 @@ pub async fn rename(source_str: String, new_name: String) -> Result<(), String> 
     tokio::fs::rename(source_path, new_path)
         .await
         .map_err(|e| format!("Rename file error: {e}"))?;
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ArchiveFormat {
+    Zip,
+    Tar,
+    SevenZ,
+}
+impl ArchiveFormat {
+    pub fn from_path(path: &Path) -> Option<Self> {
+        match path.extension().and_then(|ext| ext.to_str()) {
+            Some("zip") => Some(ArchiveFormat::Zip),
+            Some("tar") => Some(ArchiveFormat::Tar),
+            Some("7z") => Some(ArchiveFormat::SevenZ),
+            _ => None,
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn archive(
+    task_id: String,
+    path_list: Vec<String>,
+    archive_name: String,
+    archive_type: Option<String>,
+    archive_level: Option<i8>,
+    password: Option<String>,
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    match ArchiveFormat::from_path(Path::new(&archive_name)) {
+        Some(ArchiveFormat::Zip) => create_zip(path_list, archive_name, task_id, app, state)
+            .await
+            .map_err(|e| format!("Error on archiving zip : {}", e)),
+        Some(ArchiveFormat::Tar) => create_tar(path_list, archive_name, task_id, app, state)
+            .await
+            .map_err(|e| format!("Error on archiving tar : {}", e)),
+        Some(ArchiveFormat::SevenZ) => {
+            create_sevenzip(path_list, archive_name, task_id, app, state)
+                .await
+                .map_err(|e| format!("Error on archiving 7z : {}", e))
+        }
+        None => return Err("Unsupport file method".to_string()),
+    }?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn extract(
+    task_id: String,
+    file_list: Vec<String>,
+    dest_dir: String,
+    password: Option<String>,
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    for file in file_list {
+        match ArchiveFormat::from_path(Path::new(&file)) {
+            Some(ArchiveFormat::Zip) => {
+                decompress(
+                    vec![file.clone()],
+                    dest_dir.clone(),
+                    task_id.clone(),
+                    app.clone(),
+                    state.clone(),
+                )
+                .await
+                .map_err(|e| format!("Error on extracting file {} : {}", &file, e))?;
+                continue;
+            }
+            Some(ArchiveFormat::Tar) => {
+                decompress(
+                    vec![file.clone()],
+                    dest_dir.clone(),
+                    task_id.clone(),
+                    app.clone(),
+                    state.clone(),
+                )
+                .await
+                .map_err(|e| format!("Error on extracting file {} : {}", &file, e))?;
+                continue;
+            }
+            Some(ArchiveFormat::SevenZ) => {
+                decompress_7z(
+                    vec![file.clone()],
+                    dest_dir.clone(),
+                    task_id.clone(),
+                    app.clone(),
+                    state.clone(),
+                )
+                .await
+                .map_err(|e| format!("Error on extracting file {} : {}", &file, e))?;
+                continue;
+            }
+            None => return Err(format!("file {} is not match any supported method", &file)),
+        }
+    }
+
     Ok(())
 }

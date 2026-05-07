@@ -7,7 +7,7 @@ use std::{
     collections::HashMap,
     fs::{self, File},
     io::Write,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 use toml::{self};
 
@@ -25,11 +25,25 @@ pub fn get_config_path(filename: &str) -> PathBuf {
         .join(filename)
 }
 #[tauri::command]
-pub fn get_quick_access() -> Result<Vec<String>, Error> {
+pub fn get_quick_access() -> Result<Vec<String>, String> {
     let config_path = get_config_path("config.toml");
-    let config_file = fs::read_to_string(config_path)?;
+    let config_file = fs::read_to_string(config_path)
+        .map_err(|e| format!("Error while reading quick access config: {}", e))?;
     let config: Config = toml::from_str(&config_file).unwrap_or_default();
     Ok(config.quick_access)
+}
+#[tauri::command]
+pub fn add_quick_access(new_path: String) -> Result<(), String> {
+    if Path::new(&new_path).exists() {
+        let mut quick_access = get_quick_access()?.join(",");
+        quick_access += &new_path;
+        let _ = fs::write(
+            get_config_path("config.toml"),
+            toml::to_string(&quick_access)
+                .map_err(|e| format!("Error while adding quick access in config.toml: {}", e))?,
+        );
+    }
+    Ok(())
 }
 #[tauri::command]
 pub fn generate_config() {

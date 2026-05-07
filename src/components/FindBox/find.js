@@ -44,17 +44,6 @@ export function useFind(lines, itemList, load_more) {
       if (!jumpToEl(currentItem.value)) scrollToItem(currentItem.value);
     },
   );
-  // watch(
-  //   () => currentItemIndex.value,
-  //   (val) => {
-  //     if (val === null) return;
-  //     console.log(val);
-  //     console.log(currentItemIndex.value);
-  //     let path = foundItems.value[val];
-  //     console.log(path);
-  //     if (!jumpToEl(path)) scrollToItem(path);
-  //   },
-  // );
   const jumpToEl = (path) => {
     const el = lines.value.find((line) => line.dataset.path === path);
     if (!el) return false;

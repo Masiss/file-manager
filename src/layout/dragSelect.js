@@ -81,7 +81,6 @@ export function useDragSelect(draggable_container) {
     }
 
     intersections();
-    // throttle(intersections);
   };
   const handleMouseUp = (e) => {
     window.removeEventListener('mousemove', handleMouseMove);
@@ -97,6 +96,7 @@ export function useDragSelect(draggable_container) {
       return;
     }
     const el = e.target.closest('tbody tr');
+    console.log(e.target);
     intersected.value = el ? [el] : [];
   };
   watch(
