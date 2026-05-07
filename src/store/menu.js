@@ -1,4 +1,4 @@
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, computed, nextTick, useTemplateRef } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { usePathStore } from './path';
@@ -13,6 +13,7 @@ export const useMenuStore = defineStore('menu', () => {
   const x = ref(null);
   const y = ref(null);
   const clipboard = ref({ item_list: [], type: null });
+  const menuRef = ref(null);
 
   const configStore = useConfigStore();
   const toastStore = useToastStore();
@@ -75,23 +76,37 @@ export const useMenuStore = defineStore('menu', () => {
       action: () => rename(),
       visible: () => selectingItems.value.length === 1,
     },
+    {},
     {
-      name: 'Archive to ...',
-      action: () => archive(),
+      name: 'Archive',
+      subs: [
+        {
+          name: 'to 7z',
+          action: () => archive('7z'),
+        },
+        {
+          name: 'to zip',
+          action: () => archive('zip'),
+        },
+        {
+          name: 'to tar',
+          action: () => archive('tar'),
+        },
+      ],
     },
     {
       name: 'Extract',
-      action: () => extract(),
+      // action: () => extract(),
       visible: () => isCompressed() && isSelecting(),
       subs: [
         {
           name: 'Extract here',
-          action: () => extract('.'),
-        },
-        {
-          name: 'Extract to ...',
           action: () => extract(),
         },
+        // {
+        //   name: 'Extract to ...',
+        //   action: () => extract(),
+        // },
       ],
     },
   ]);
@@ -111,29 +126,17 @@ export const useMenuStore = defineStore('menu', () => {
   const addQuickAccess = () => {
     configStore.addQuickAccess(selectingItems.value[0]);
   };
-  const copy = () => {
-    console.log('copy');
-    clipboard.value = {
-      item_list: [...selectingItems.value.map((item) => item.dataset.path)],
-      type: 'copy',
-    };
-  };
-  const archive = async (
-    archive_name,
-    archive_type,
-    archive_level,
-    password,
-  ) => {
+  const archive = async (format) => {
     let taskId = crypto.randomUUID();
     await createProgressWindow();
 
     await invoke('archive', {
-      taskId: taskId,
-      file: selectingItems.value.map((tr) => tr.dataset.path),
-      ...(archive_name && { archiveName: archive_name }),
-      ...(password && { password: password }),
-      ...(archive_type && { archiveType: archive_type }),
-      ...(archive_level && { archiveLevel: archive_level }),
+      taskInfo: {
+        src_list: selectingItems.value.map((item) => item.dataset.path),
+        dest_dir: pathStore.current_path,
+        task_id: taskId,
+      },
+      format: format.trim(),
     });
     await listen('message', (e) => console.log(e));
   };
@@ -141,16 +144,25 @@ export const useMenuStore = defineStore('menu', () => {
     let taskId = crypto.randomUUID();
     createProgressWindow();
     await invoke('extract', {
-      taskId: taskId,
-      file: selectingItems.value[0],
-      destDir: dest ? dest : pathStore.current_path,
-      ...(password && { password: password }),
+      taskInfo: {
+        src_list: selectingItems.value.map((item) => item.dataset.path),
+        dest_dir: pathStore.current_path,
+        task_id: taskId,
+      },
     });
   };
-  const cut = () => {
+  const copy = () => {
+    console.log('copy');
     clipboard.value = {
       item_list: [...selectingItems.value.map((item) => item.dataset.path)],
-      type: 'cup',
+      type: 'copy',
+    };
+  };
+  const cut = () => {
+    console.log('cut');
+    clipboard.value = {
+      item_list: [...selectingItems.value.map((item) => item.dataset.path)],
+      type: 'cut',
     };
   };
   const renamingPath = ref(null);
@@ -267,9 +279,11 @@ export const useMenuStore = defineStore('menu', () => {
       let fn = async () => {
         await emitTo('progress', 'progress-started');
         await invoke(command, {
-          sourceList: clipboard.value.item_list,
-          destDir: pathStore.current_path,
-          taskId: taskId,
+          taskInfo: {
+            src_list: clipboard.value.item_list,
+            dest_dir: pathStore.current_path,
+            task_id: taskId,
+          },
         });
       };
       toastStore.addToast('progress', type.toUpperCase(), { task_id: taskId });
@@ -278,6 +292,8 @@ export const useMenuStore = defineStore('menu', () => {
     }
   };
   const handleClick = (action) => {
+    if (!action) return;
+    isMenuShow.value = false;
     action();
   };
   function handleContextMenu(e) {
@@ -285,19 +301,20 @@ export const useMenuStore = defineStore('menu', () => {
     y.value = e.clientY;
     isMenuShow.value = true;
     nextTick(() => {
+      console.log(menuRef.value);
       window.addEventListener('click', closeContextMenu);
     });
   }
-  function closeContextMenu(e) {
+  async function closeContextMenu(e) {
     e.preventDefault();
     e.stopPropagation();
-    let menu = document.querySelector('div#menu');
-    if (!menu.contains(e.target)) isMenuShow.value = false;
-    else nextTick(() => (isMenuShow.value = false));
+    console.log(menuRef.value);
+    if (!menuRef.value.contains(e.target)) isMenuShow.value = false;
     window.removeEventListener('click', closeContextMenu);
   }
   return {
     menu,
+    menuRef,
     handleClick,
     renamingPath,
     isMenuShow,

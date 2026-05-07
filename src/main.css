@@ -27,7 +27,8 @@ body {
   line-height: 1.5;
 }
 .modal,
-.menu {
+.menu,
+.sub-menu {
   background-color: var(--bg-app);
 }
 

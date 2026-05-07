@@ -1,4 +1,6 @@
-use crate::commands::operation::operation::{AppState, TaskProgress};
+use crate::commands::operation::operation::{
+    AppState, TaskInfo, TaskProgress, generate_cancellation_token,
+};
 use compress_tools::ArchiveContents;
 use compress_tools::tokio_support::ArchiveIteratorBuilder;
 use futures_util::StreamExt;
@@ -55,9 +57,8 @@ pub async fn create_tar(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let dest_path = resolve_dest(&src_list[0], &dest_dir, "tar")?;
-    let token = CancellationToken::new();
-    state.task_info.lock().await.cancel_token = Some(token.clone());
 
+    let token = generate_cancellation_token(&task_id, state).await.unwrap();
     tokio::task::spawn_blocking(move || {
         let dest_file = std::fs::File::create(&dest_path)
             .map_err(|e| format!("Cannot create tar file: {}", e))?;
@@ -65,9 +66,8 @@ pub async fn create_tar(
         let mut tar = Builder::new(dest_file);
         let entries = collect_entries(&src_list)?;
         let total = entries.len() as u64;
-        let mut value = 0;
 
-        for (abs, relative) in entries {
+        for (index, (abs, relative)) in entries.iter().enumerate() {
             if token.is_cancelled() {
                 return Err(format!("Cancelled"));
             }
@@ -80,14 +80,13 @@ pub async fn create_tar(
                 tar.append_file(&relative, &mut f)
                     .map_err(|e| format!("Cannot append file {:?}: {}", relative, e))?;
             }
-            value += 1;
             app.emit(
                 "task-progressing",
                 TaskProgress {
                     task_id: task_id.clone(),
-                    value: value,
+                    value: index as u64,
                     total: total,
-                    done: false,
+                    done: index == entries.len() - 1,
                 },
             )
             .unwrap();
@@ -108,8 +107,7 @@ pub async fn create_sevenzip(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let dest_path = resolve_dest(&src_list[0], &dest_dir, "7z")?;
-    let token = CancellationToken::new();
-    state.task_info.lock().await.cancel_token = Some(token.clone());
+    let token = generate_cancellation_token(&task_id, state).await.unwrap();
 
     tokio::task::spawn_blocking(move || {
         let entries = collect_entries(&src_list).map_err(|e| e.to_string())?;
@@ -157,6 +155,16 @@ pub async fn create_sevenzip(
 
         sz.finish()
             .map_err(|e| format!("Cannot finish archive: {}", e))?;
+        app.emit(
+            "task-progressing",
+            TaskProgress {
+                task_id: task_id.clone(),
+                value: value,
+                total: total,
+                done: true,
+            },
+        )
+        .unwrap();
         Ok(())
     })
     .await
@@ -171,8 +179,7 @@ pub async fn create_zip(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let dest_path = resolve_dest(&src_list[0], &dest_dir, "zip")?;
-    let token = CancellationToken::new();
-    state.task_info.lock().await.cancel_token = Some(token.clone());
+    let token = generate_cancellation_token(&task_id, state).await.unwrap();
 
     tokio::task::spawn_blocking(move || {
         let entries = collect_entries(&src_list)?;
@@ -230,6 +237,16 @@ pub async fn create_zip(
 
         zip.finish()
             .map_err(|e| format!("Cannot finish zip: {}", e))?;
+        app.emit(
+            "task-progressing",
+            TaskProgress {
+                task_id: task_id.clone(),
+                value: file_done as u64,
+                total: total as u64,
+                done: true,
+            },
+        )
+        .unwrap();
         Ok(())
     })
     .await
@@ -247,8 +264,7 @@ pub async fn decompress_7z(
     if !dest_path.is_dir() {
         return Err(format!("Destination must be a directory: {}", dest_dir));
     }
-    let token = CancellationToken::new();
-    state.task_info.lock().await.cancel_token = Some(token.clone());
+    let token = generate_cancellation_token(&task_id, state).await.unwrap();
 
     tokio::task::spawn_blocking(move || {
         let dest = Path::new(&dest_dir);
@@ -297,6 +313,16 @@ pub async fn decompress_7z(
                 )
                 .unwrap();
             }
+            app.emit(
+                "task-progressing",
+                TaskProgress {
+                    task_id: task_id.clone(),
+                    value: value as u64,
+                    total: total as u64,
+                    done: true,
+                },
+            )
+            .unwrap();
         }
         Ok(())
     })
@@ -312,8 +338,9 @@ pub async fn decompress(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     for src_file in src_list {
-        let token = CancellationToken::new();
-        state.task_info.lock().await.cancel_token = Some(token.clone());
+        let token = generate_cancellation_token(&task_id, state.clone())
+            .await
+            .unwrap();
 
         let dest_path = Path::new(&dest_dir);
         if !dest_path.is_dir() {
@@ -329,6 +356,9 @@ pub async fn decompress(
         let mut value = 0;
 
         while let Some(content) = iter.next().await {
+            if token.is_cancelled() {
+                return Err(format!("Canncelled"));
+            }
             match content {
                 ArchiveContents::StartOfEntry(name, stat) => {
                     // Flush previous entry
@@ -399,6 +429,16 @@ pub async fn decompress(
                 .await
                 .map_err(|e| format!("Final flush error: {}", e))?;
         }
+        app.emit(
+            "task-progressing",
+            TaskProgress {
+                task_id: task_id.clone(),
+                value: value as u64,
+                total: 0 as u64,
+                done: true,
+            },
+        )
+        .unwrap();
     }
 
     Ok(())
