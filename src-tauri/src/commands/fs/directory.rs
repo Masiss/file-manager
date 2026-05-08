@@ -138,9 +138,12 @@ pub fn create_file_from_path(path: &Path) -> Result<File> {
     Ok(file)
 }
 #[tauri::command]
-pub fn open_file(path: String) -> Result<(), Error> {
-    let buf: PathBuf = PathBuf::from(path);
-    open::that_detached(buf)?;
+pub fn open_file(path: String) -> Result<(), String> {
+    let buf: PathBuf = PathBuf::from(&path);
+    if !buf.exists() {
+        return Err(format!("Failed to open {}", &path));
+    }
+    open::that(buf).map_err(|e| format!("Failed to open file {} : {}", path, e))?;
     Ok(())
 }
 #[tauri::command]

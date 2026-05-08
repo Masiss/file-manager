@@ -43,4 +43,4 @@ futures-util = "0.3"
 sevenz-rust2 = { version = "0.20",features = ["zstd"] }
 tar = "0.4"
 libc = "0.2.186"
-
+winreg = "0.56.0"

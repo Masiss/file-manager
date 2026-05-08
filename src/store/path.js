@@ -56,7 +56,9 @@ export const usePathStore = defineStore('current-path', () => {
   }
   function access_dir(path, type) {
     console.log('access dir run');
-    if (type === 'File') {
+    console.log(path);
+    console.log(type);
+    if (type?.trim().toLowerCase() === 'file') {
       invoke('open_file', { path });
     } else {
       current_path.value = path;

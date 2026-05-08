@@ -31,6 +31,7 @@ const isShowBreadcrumb = computed(() => {
           ref="pathInput"
           class="bread_crumbs_input"
           type="text"
+          @keydown.stop
           @keydown.enter="editPath"
           @keydown.esc="cancelEditing"
           :value="store.current_path"

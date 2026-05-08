@@ -39,7 +39,7 @@ onMounted(() => {
         </li>
       </ul>
       <hr />
-      <span> Quick accesses </span>
+      <span> Quick access </span>
       <ul>
         <li
           v-for="item in quickAccess"

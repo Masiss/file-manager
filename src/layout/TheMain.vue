@@ -44,8 +44,18 @@ const handleOnScroll = (e) => {
 
   scrollInfo.value = { scrollTop, clientHeight, scrollHeight };
 };
+const handleMouseExtraButton = (e) => {
+  if (e.button === 4) {
+    e.preventDefault();
+    pathStore.navigate_forward();
+  } else if (e.button === 3) {
+    e.preventDefault();
+    pathStore.navigate_back();
+  }
+};
 
 onMounted(() => {
+  window.addEventListener('mousedown', handleMouseExtraButton);
   scrollInfo.value = {
     scrollTop: draggable_container.value?.scrollTop,
     clientHeight: draggable_container.value?.clientHeight,
@@ -116,7 +126,7 @@ onMounted(() => {
   padding: 0 1rem 0 0;
 }
 .menu {
-  position: absolute;
+  position: fixed;
   z-index: 999;
   width: fit-content;
   height: fit-content;

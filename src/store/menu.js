@@ -22,25 +22,25 @@ export const useMenuStore = defineStore('menu', () => {
   const menuItems = ref([
     {
       name: 'Open',
-      action: () => openItem(),
+      action: () => open_item(),
       visible: () => isSelecting(),
     },
-    {
-      name: 'Open with ...',
-      action: () => openWith(),
-      visible: () => isSelecting(),
-      subs: [
-        {
-          name: 'a',
-          action: () => openWith(),
-        },
-      ],
-    },
-    {
-      name: 'Run as administrator',
-      action: () => openAsAdmin(),
-      visible: () => isSelecting(),
-    },
+    // {
+    //   name: 'Open with ...',
+    //   action: () => openWith(),
+    //   visible: () => isSelecting(),
+    //   subs: [
+    //     {
+    //       name: 'a',
+    //       action: () => openWith(),
+    //     },
+    //   ],
+    // },
+    // {
+    //   name: 'Run as administrator',
+    //   action: () => openAsAdmin(),
+    //   visible: () => isSelecting(),
+    // },
     {
       name: 'Add to quick access',
       action: () => addQuickAccess(),
@@ -79,6 +79,7 @@ export const useMenuStore = defineStore('menu', () => {
     {},
     {
       name: 'Archive',
+      visible: () => isSelecting(),
       subs: [
         {
           name: 'to 7z',
@@ -96,7 +97,6 @@ export const useMenuStore = defineStore('menu', () => {
     },
     {
       name: 'Extract',
-      // action: () => extract(),
       visible: () => isCompressed() && isSelecting(),
       subs: [
         {
@@ -119,12 +119,17 @@ export const useMenuStore = defineStore('menu', () => {
       return compress_type.includes(ext);
     });
   };
+  const open_item = () => {
+    let item_type = selectingItems.value[0].dataset.fileType;
+    let path = selectingItems.value[0].dataset.path;
+    pathStore.access_dir(path, item_type);
+  };
   const menu = computed(() => {
     console.log(selectingItems.value);
     return menuItems.value.filter((item) => !item.visible || item.visible());
   });
   const addQuickAccess = () => {
-    configStore.addQuickAccess(selectingItems.value[0]);
+    configStore.addQuickAccess(selectingItems.value[0].dataset.path);
   };
   const archive = async (format) => {
     let taskId = crypto.randomUUID();

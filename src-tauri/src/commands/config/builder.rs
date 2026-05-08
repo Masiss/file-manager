@@ -1,10 +1,7 @@
 use anyhow::Result;
 use dirs::{config_dir, download_dir, home_dir};
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::{
-    collections::HashMap,
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
@@ -24,26 +21,49 @@ pub fn get_config_path(filename: &str) -> PathBuf {
         .join("file-manager")
         .join(filename)
 }
+static CONFIG_FILE: &str = "config.toml";
+pub fn get_config() -> anyhow::Result<Config> {
+    let config_path = get_config_path(CONFIG_FILE);
+    let config_file = fs::read_to_string(config_path)?;
+
+    let config: Config = toml::from_str(&config_file).unwrap_or_default();
+    Ok(config)
+}
 #[tauri::command]
 pub fn get_quick_access() -> Result<Vec<String>, String> {
-    let config_path = get_config_path("config.toml");
-    let config_file = fs::read_to_string(config_path)
-        .map_err(|e| format!("Error while reading quick access config: {}", e))?;
-    let config: Config = toml::from_str(&config_file).unwrap_or_default();
+    let config = get_config().map_err(|e| format!("Error on getting config : {}", e))?;
     Ok(config.quick_access)
 }
 #[tauri::command]
-pub fn add_quick_access(new_path: String) -> Result<(), String> {
-    if Path::new(&new_path).exists() {
-        let mut quick_access = get_quick_access()?.join(",");
-        quick_access += &new_path;
+pub fn remove_quick_access(path: String) -> Result<String, String> {
+    if Path::new(&path).exists() {
+        let mut config = get_config().map_err(|e| format!("Error on getting config : {}", e))?;
+        config.quick_access.retain(|x| x == &path);
         let _ = fs::write(
             get_config_path("config.toml"),
-            toml::to_string(&quick_access)
+            toml::to_string(&config)
+                .map_err(|e| format!("Error while writing new config: {}", e))?,
+        );
+        return Ok(format!("Remove {} from quick access!", &path));
+    }
+    Err(format!("Cant find path {}", &path))
+}
+#[tauri::command]
+pub fn add_quick_access(new_path: String) -> Result<String, String> {
+    if Path::new(&new_path).exists() {
+        let mut config = get_config().map_err(|e| format!("Error on getting config : {}", e))?;
+        if let Some(found) = config.quick_access.iter().find(|&x| x == &new_path) {
+            return Err(format!("{} existed in quick access", &new_path));
+        }
+        config.quick_access.push(new_path.clone());
+        let _ = fs::write(
+            get_config_path("config.toml"),
+            toml::to_string(&config)
                 .map_err(|e| format!("Error while adding quick access in config.toml: {}", e))?,
         );
+        return Ok(format!("Added {} to quick access!", &new_path));
     }
-    Ok(())
+    Err(format!("Cant find path {}", &new_path))
 }
 #[tauri::command]
 pub fn generate_config() {

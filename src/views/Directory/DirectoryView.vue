@@ -148,7 +148,7 @@ const isFinding = ref(null);
           :key="item.path"
           @dblclick="pathStore.access_dir(item.path, item.file_type)"
           :data-path="item.path"
-          :data-type="item.type"
+          :data-file-type="item.file_type"
           ref="lines"
         >
           <td v-if="showCheckbox" style="width: 3vw">

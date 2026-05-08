@@ -29,6 +29,7 @@ const search = async () => {
     <div class="search-container">
       <input
         ref="searchInput"
+        @keydown.stop
         @keydown.enter="search"
         @keydown.esc="cancelEditing"
         type="text"

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { invoke } from '@tauri-apps/api/core';
 import { ref, watchEffect } from 'vue';
 import {
   exists,
@@ -126,7 +127,8 @@ export const useConfigStore = defineStore('config', () => {
     localStorage.setItem('config', JSON.stringify(config.value));
   }
   function addQuickAccess(path) {
-    invoke('add_quick_accesss', { newPath: path });
+    console.log(path);
+    invoke('add_quick_access', { newPath: path });
   }
   function set(categoryId, itemId, value) {
     const category = this.config.find((c) => c.id === categoryId);
