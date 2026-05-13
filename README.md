@@ -5,7 +5,9 @@ replacement for windows explorer
 #### FEATURES:
  - [x] Search: TRIGRAM.
  - [x] Drag-select.
- - [ ] Context menu.
+ - [x] Context menu.
+ - [x] Infinity scroll.
+ - [x] Archive/decompress: zip, 7z, tar.
  - [ ] Permission control.
  - [ ] Config.
  - [ ] Split view.
