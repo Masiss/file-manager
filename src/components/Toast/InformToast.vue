@@ -5,6 +5,6 @@ const props = defineProps(['data']);
 </script>
 <template>
   <div class="toast-body">
-    {{ props.data.info }}gnaspodnpoasnfpoasnpdoasnpofsn
+    {{ props.data.info }}
   </div>
 </template>

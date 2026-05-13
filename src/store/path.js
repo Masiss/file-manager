@@ -10,6 +10,7 @@ export const usePathStore = defineStore('current-path', () => {
   const path_list = ref(['disk:']);
   const path_index = ref(0);
   const items = ref([]);
+  const current_index = ref(null);
   function navigate_forward() {
     if (path_index.value >= path_list.value.length) {
       return;
@@ -31,7 +32,9 @@ export const usePathStore = defineStore('current-path', () => {
     path_list.value.push(view.value + ':' + current_path.value);
   }
   const getView = computed(() =>
-    view.value === 'search' || view.value === 'directory'
+    view.value === 'search' ||
+    view.value === 'directory' ||
+    view.value === 'trash'
       ? DirectoryView
       : view.value === 'disk'
         ? DiskView
@@ -44,6 +47,20 @@ export const usePathStore = defineStore('current-path', () => {
     path_index.value = 0;
     path_list.value = [];
   }
+  const load_more = ref(null);
+  function reload() {
+    let old_index = current_index.value;
+    access_dir(current_path.value);
+    load_path();
+    while (old_index < current_index.value) {
+      load_more();
+    }
+  }
+  async function trash_dir() {
+    view.value = 'trash';
+    path_list.value.push('trash');
+    items.value = await invoke('get_trash_bin');
+  }
   async function search(input) {
     view.value = 'search';
     let res = [];
@@ -55,30 +72,15 @@ export const usePathStore = defineStore('current-path', () => {
     items.value = JSON.parse(res);
   }
   function access_dir(path, type) {
-    console.log('access dir run');
-    console.log(path);
-    console.log(type);
     if (type?.trim().toLowerCase() === 'file') {
       invoke('open_file', { path });
     } else {
       current_path.value = path;
       path_list.value.push(view.value + ':' + path);
       path_index.value += 1;
-      console.log(current_path.value);
     }
     console.log('access dir end');
   }
-  // async function load_file() {
-  //   let items = [];
-  //   if (current_path.value) {
-  //     view.value = 'directory';
-  //     items = await invoke('load_file', { currentPath: current_path.value });
-  //   } else {
-  //     view.value = 'disk';
-  //     items = await invoke('load_disk');
-  //   }
-  //   return JSON.parse(items);
-  // }
   watch(
     () => current_path.value,
     () => load_path(),
@@ -96,8 +98,13 @@ export const usePathStore = defineStore('current-path', () => {
     items.value = res;
   }
   async function load_metadata(path) {
-    let path_array = [...path];
-    let res = await invoke('load_metadata', { pathList: path_array });
+    let res;
+    if (view.value === 'trash') {
+      res = await invoke('load_trash_metadata', { pathList: [...path] });
+    } else {
+      let path_array = [...path];
+      res = await invoke('load_metadata', { pathList: path_array });
+    }
 
     return res;
   }
@@ -113,5 +120,10 @@ export const usePathStore = defineStore('current-path', () => {
     current_path,
     navigate_back,
     navigate_forward,
+    current_index,
+    load_more,
+    reload,
+    trash_dir,
+    view,
   };
 });

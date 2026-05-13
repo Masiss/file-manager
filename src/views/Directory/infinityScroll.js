@@ -2,7 +2,7 @@ import { usePathStore } from '../../store/path.js';
 import { computed, nextTick, onMounted, ref, watch, onUnmounted } from 'vue';
 import { useThrottle } from './utils.js';
 export function useInfinityScroll(items, table, scrollInfo) {
-  const store = usePathStore();
+  const pathStore = usePathStore();
   const DISPLAY_COUNT = 10;
   const current_index = ref(0);
 
@@ -34,7 +34,7 @@ export function useInfinityScroll(items, table, scrollInfo) {
       sorted_items.value.length,
     );
     let new_items = sorted_items.value.slice(current_index.value, end_index);
-    let metadata = await store.load_metadata([...new_items]);
+    let metadata = await pathStore.load_metadata([...new_items]);
     displaying_items.value.push(...metadata);
     current_index.value = end_index;
     nextTick(() => {
@@ -42,6 +42,17 @@ export function useInfinityScroll(items, table, scrollInfo) {
       check_and_fill_viewport();
     });
   };
+  watch(
+    () => pathStore.haveNewFile,
+    (new_file_path) => {
+      pathStore.reload();
+      let getRow = () =>
+        table.value.querySelector(`tr[data-path="${new_file_path}"]`);
+      do {
+        load_more();
+      } while (getRow);
+    },
+  );
   const handleWindowResize = () => {
     console.log('handle resize');
     throttle(check_and_fill_viewport);

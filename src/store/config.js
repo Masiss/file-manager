@@ -126,9 +126,18 @@ export const useConfigStore = defineStore('config', () => {
     });
     localStorage.setItem('config', JSON.stringify(config.value));
   }
-  function addQuickAccess(path) {
+  const quickAccess = ref([]);
+  const getQuickAccess = async () => {
+    let res = await invoke('get_quick_access');
+    quickAccess.value = res.map((path) => ({
+      path: path,
+      name: path.split('\\').pop(),
+    }));
+  };
+  async function addQuickAccess(path) {
     console.log(path);
-    invoke('add_quick_access', { newPath: path });
+    await invoke('add_quick_access', { newPath: path });
+    await getQuickAccess();
   }
   function set(categoryId, itemId, value) {
     const category = this.config.find((c) => c.id === categoryId);
@@ -144,5 +153,14 @@ export const useConfigStore = defineStore('config', () => {
     if (!item.cssVar) return; // chỉ apply nếu có cssVar
     document.documentElement.style.setProperty(item.cssVar, item.value);
   };
-  return { config, get, save, set, init, addQuickAccess };
+  return {
+    config,
+    get,
+    save,
+    set,
+    init,
+    addQuickAccess,
+    getQuickAccess,
+    quickAccess,
+  };
 });

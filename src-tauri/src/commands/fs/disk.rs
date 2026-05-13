@@ -2,7 +2,6 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sysinfo::{Disks, System};
 
-use crate::commands::error::Error;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Disk {
     pub name: String,
@@ -32,33 +31,7 @@ pub fn get_disk() -> Result<Vec<Disk>> {
     Ok(list_disk)
 }
 #[tauri::command]
-pub fn load_disk() -> Result<Vec<Disk>, Error> {
-    let list_disk = get_disk()?;
-    // let mut sys = System::new_all();
-    // sys.refresh_all();
-    // let disks = Disks::new_with_refreshed_list();
-    // let mut list_disk: Vec<Disk> = Vec::new();
-    // for disk in &disks {
-    //     list_disk.push(Disk {
-    //         name: String::from(disk.name().to_string_lossy()),
-    //         kind: disk.kind().to_string(),
-    //         available_space: disk.available_space(),
-    //         mount_point: String::from(disk.mount_point().to_string_lossy()),
-    //         is_removable: disk.is_removable(),
-    //         total_space: disk.total_space(),
-    //         path: String::from(disk.mount_point().to_string_lossy()),
-    //     });
-    //     // println!("==============");
-    //     // println!("Disk: {}", disk.name().to_string_lossy());
-    //     // println!("Type: {:?}", disk.kind());
-    //     // println!("Total space: {} GB", disk.total_space() / 1_000_000_000);
-    //     // println!(
-    //     //     "Available space: {} GB",
-    //     //     disk.available_space() / 1_000_000_000
-    //     // );
-    //     // println!("Mount point: {:?}", disk.mount_point());
-    //     // println!("File system: {:?}", disk.file_system());
-    // }
-    //
+pub fn load_disk() -> Result<Vec<Disk>, String> {
+    let list_disk = get_disk().map_err(|e| format!("Error on getting disk : {}", e))?;
     Ok(list_disk)
 }

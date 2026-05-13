@@ -11,6 +11,7 @@ import {
 } from 'vue';
 import { format_size, set_item_icon } from './utils.js';
 import Icon from '../../components/Icon.vue';
+import EditableSpan from '../../components/EditableSpan.vue';
 import { useInfinityScroll } from './infinityScroll.js';
 import { useResizing } from '../../composables/resize.js';
 import BottomLine from '../../components/BottomLine/BottomLine.vue';
@@ -22,12 +23,8 @@ const pathStore = usePathStore();
 const menuStore = useMenuStore();
 const table = useTemplateRef('table');
 const emits = defineEmits(['line-click']);
-const items = ref([]);
-watch(
-  () => props.items,
-  () => (items.value = props.items),
-  { immediate: true },
-);
+const items = toRef(pathStore, 'items');
+// const items = ref([]);
 const {
   displaying_items,
   isProgressing,
@@ -35,8 +32,13 @@ const {
   current_index,
   load_more,
 } = useInfinityScroll(items, table, toRef(props, 'scrollInfo'));
+pathStore.load_more = load_more;
+watch(current_index, () => {
+  pathStore.current_index = current_index;
+});
 const ths = ref();
 const lines = useTemplateRef('lines');
+
 const isAsc = ref(false);
 const sortingCol = ref(null);
 const sortColumn = async (colName) => {
@@ -72,6 +74,36 @@ const cols = ref([
     label: 'Size',
   },
 ]);
+const trash_cols = ref([
+  {
+    name: 'name',
+    label: 'Name',
+  },
+  {
+    name: 'deletation_time',
+    label: 'Delete time',
+  },
+  {
+    name: 'original_path',
+    label: 'Original Path',
+  },
+  {
+    name: 'size',
+    label: 'Size',
+  },
+]);
+const getCols = computed(() => {
+  console.log(pathStore.view);
+  return pathStore.view === 'trash' ? trash_cols.value : cols.value;
+});
+const getCellValue = (row, colName) => {
+  switch (colName) {
+    case 'size':
+      return format_size(row[colName]);
+    default:
+      return row[colName] ?? '-';
+  }
+};
 onMounted(() => {
   ths.value = table.value.querySelectorAll('th');
   let cols = Array.from(ths.value).map((th) => ({
@@ -131,7 +163,7 @@ const isFinding = ref(null);
       <thead>
         <tr>
           <th v-if="showCheckbox" style="width: 3vw"></th>
-          <th v-for="col in cols" @click.prevent="sortColumn(col.name)">
+          <th v-for="col in getCols" @click.prevent="sortColumn(col.name)">
             <div>
               <span> {{ col.label }}</span>
               <span v-if="sortingCol === col.name" class="direction-container">
@@ -151,22 +183,34 @@ const isFinding = ref(null);
           :data-file-type="item.file_type"
           ref="lines"
         >
-          <td v-if="showCheckbox" style="width: 3vw">
+          <td v-show="showCheckbox" style="width: 3vw">
             <input :checked="isSelected(item.path)" type="checkbox" />
           </td>
-          <td class="name-cell">
-            <Icon
-              :icon="set_item_icon(item.file_type)"
-              v-if="menuStore.renamingPath !== item.path"
-            />
-            <span class="name-span" :contenteditable="isRenaming(item.path)">
-              {{ item.name }}
-            </span>
+          <td
+            v-for="col in getCols"
+            :key="col"
+            :class="col.name === 'name' ? 'name-cell' : ''"
+          >
+            <template v-if="col.name === 'name'">
+              <Icon
+                :icon="set_item_icon(item.file_type)"
+                v-if="menuStore.renamingPath !== item.path"
+              />
+
+              <EditableSpan
+                :text="item.name"
+                :isEditing="menuStore.renamingPath === item.path"
+                @confirm="(newName) => menuStore.confirmRename(newName)"
+                @cancel="menuStore.cancelRename"
+              />
+              <!-- <span class="name-span" :contenteditable="isRenaming(item.path)"> -->
+              <!--   {{ item.name }} -->
+              <!-- </span> -->
+            </template>
+            <template v-else>
+              <td>{{ getCellValue(item, col.name) }}</td>
+            </template>
           </td>
-          <td>{{ item.created_at }}</td>
-          <td>{{ item.last_modified }}</td>
-          <td>{{ item.path }}</td>
-          <td>{{ format_size(item.size) }}</td>
         </tr>
       </tbody>
     </table>

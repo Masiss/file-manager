@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod commands;
 use crate::commands::{
-    config::builder::{add_quick_access, generate_config, get_quick_access},
+    config::builder::{add_quick_access, generate_config, get_quick_access, remove_quick_access},
     fs::{directory, disk},
     operation::operation::{self, AppState},
     search::trigram::{builder::generate_index, search::search},
@@ -26,8 +26,14 @@ fn all_commands() -> fn(Invoke) -> bool {
         operation::rename,
         operation::archive,
         operation::extract,
+        operation::get_trash_bin,
+        operation::delete_file,
+        operation::create_file,
+        operation::create_dir,
+        operation::load_trash_metadata,
         add_quick_access,
         get_quick_access,
+        remove_quick_access,
         generate_index,
         search,
         generate_config,

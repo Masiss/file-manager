@@ -38,7 +38,7 @@ pub fn get_quick_access() -> Result<Vec<String>, String> {
 pub fn remove_quick_access(path: String) -> Result<String, String> {
     if Path::new(&path).exists() {
         let mut config = get_config().map_err(|e| format!("Error on getting config : {}", e))?;
-        config.quick_access.retain(|x| x == &path);
+        config.quick_access.retain(|x| x != &path);
         let _ = fs::write(
             get_config_path("config.toml"),
             toml::to_string(&config)

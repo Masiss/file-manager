@@ -10,7 +10,7 @@ import {
 } from 'vue';
 import { usePathStore } from '../store/path.js';
 import { storeToRefs } from 'pinia';
-import SideBar from '../components/SideBar.vue';
+import SideBar from '../components/SideBar/SideBar.vue';
 import { useDragSelect } from './dragSelect.js';
 import Menu from '../components/Menu/Menu.vue';
 import Icon from '../components/Icon.vue';
@@ -69,7 +69,6 @@ onMounted(() => {
   <div
     @scroll.passive="handleOnScroll"
     @mousedown="handleMouseDown"
-    @contextmenu.prevent="menuStore.handleContextMenu"
     class="draggable-container layout_browser container"
     ref="draggable_container"
     id="draggable_container"

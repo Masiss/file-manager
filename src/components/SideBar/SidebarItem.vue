@@ -1,6 +1,6 @@
 <script setup>
 import { useTemplateRef, computed, ref } from 'vue';
-import Icon from './Icon.vue';
+import Icon from '../Icon.vue';
 const props = defineProps(['directory']);
 const emit = defineEmits(['getSub']);
 const details = useTemplateRef('details');
@@ -23,8 +23,8 @@ const handleClickExpand = (e) => {
         {{ props.directory.name }}
       </span>
     </summary>
-    <ul>
-      <li v-for="sub in props.directory.subs">
+    <ul class="tree">
+      <li class="node" v-for="sub in props.directory.subs">
         <SidebarItem @get-sub="$emit('getSub', $event)" :directory="sub" />
       </li>
     </ul>

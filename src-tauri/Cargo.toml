@@ -44,3 +44,5 @@ sevenz-rust2 = { version = "0.20",features = ["zstd"] }
 tar = "0.4"
 libc = "0.2.186"
 winreg = "0.56.0"
+trash = "5.2.6"
+unicode-normalization = "0.1.25"

@@ -1,12 +1,20 @@
+use crate::commands::fs::disk::get_disk;
 use crate::commands::operation::archive_extract::{
     create_sevenzip, create_tar, create_zip, decompress, decompress_7z,
 };
 
 use anyhow::anyhow;
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
+use trash::Error::RestoreCollision;
+use trash::TrashContext;
+use trash::os_limited::{list, restore_all};
 
 use std::collections::HashMap;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::time::SystemTime;
 use tauri::{App, Emitter};
 use tauri::{AppHandle, State};
 use tokio::fs::{self, File, try_exists};
@@ -14,6 +22,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::select;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
+use unicode_normalization::UnicodeNormalization;
 use walkdir::WalkDir;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq)]
@@ -95,6 +104,248 @@ pub async fn cancel(task_id: String, state: State<'_, AppState>) -> Result<(), S
     }
     Ok(())
 }
+
+#[tauri::command]
+pub async fn create_file(directory: String, file_name: Option<String>) -> Result<String, String> {
+    let dir_path = Path::new(&directory);
+
+    if !dir_path.exists() {
+        return Err(format!("Cant find parent of {}", &directory));
+    }
+    let file_path = if let Some(name) = file_name {
+        let path = dir_path.join(&name);
+        if path.exists() {
+            return Err(format!("File name {} has been existed!", &name));
+        }
+        path
+    } else {
+        let name = "New file.txt";
+        let mut path = dir_path.join(name);
+        if path.exists() {
+            let mut counter = 1;
+            loop {
+                path = dir_path.join(format!("New file {}.txt", &counter));
+                if !path.exists() {
+                    break;
+                }
+                counter += 1;
+            }
+        }
+        path
+    };
+    tokio::fs::File::create_new(&file_path)
+        .await
+        .map_err(|e| format!("Error while creating file : {}", e))?;
+
+    Ok(file_path.to_string_lossy().to_string())
+}
+#[tauri::command]
+pub async fn create_dir(dir_path: String) -> Result<String, String> {
+    let path = Path::new(&dir_path);
+    if path.parent().is_none() {
+        return Err(format!("Cant find parent of {}", &dir_path));
+    }
+    tokio::fs::create_dir(path)
+        .await
+        .map_err(|e| format!("Error on creating directory {}: {}", &dir_path, e))?;
+    Ok(format!("Created directory {}!", &dir_path))
+}
+#[tauri::command]
+pub async fn delete_file(
+    task_id: String,
+    path_list: Vec<String>,
+    permanent: bool,
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let token = generate_cancellation_token(&task_id, state)
+        .await
+        .map_err(|e| format!("Error on generate cancellation token : {}", e))?;
+    let mut deleted_filename: Vec<OsString> = vec![];
+    for (index, path_str) in path_list.iter().enumerate() {
+        if token.is_cancelled() {
+            if !permanent {
+                let items = list()
+                    .unwrap()
+                    .into_iter()
+                    .filter(|x| deleted_filename.contains(&x.name));
+                if let Err(RestoreCollision {
+                    path,
+                    mut remaining_items,
+                }) = restore_all(items)
+                {
+                    // keep all except the one(s) that couldn't be restored
+                    remaining_items.retain(|e| e.original_path() != path);
+                    restore_all(remaining_items).unwrap();
+                }
+            }
+            return Err("Cancelled".to_string());
+        }
+        let path = Path::new(&path_str);
+        if !path.exists() {
+            return Err(format!("File {} is not exist!", &path_str));
+        }
+        deleted_filename.push(path.file_name().unwrap().to_os_string());
+
+        if permanent {
+            fs::remove_file(&path_str)
+                .await
+                .map_err(|e| format!("Failed to delete file {} : {}", &path_str, e))?;
+        } else {
+            trash::delete(path_str)
+                .map_err(|e| format!("Failed to delete file {}: {}", &path_str, e))?;
+        }
+        app.emit(
+            "task-progressing",
+            TaskProgress {
+                task_id: task_id.to_string(),
+                value: (index + 1) as u64,
+                total: path_list.len() as u64,
+                done: false,
+            },
+        )
+        .unwrap();
+    }
+    Ok(())
+}
+
+pub fn get_sid() -> Result<String, String> {
+    let output = Command::new("whoami")
+        .args(["/user", "/fo", "csv", "/nh"])
+        .output()
+        .ok()
+        .unwrap();
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let parts: Vec<&str> = stdout.trim().split(",").collect();
+        let sid = parts[1].trim().replace('"', "").to_string();
+        return Ok(sid);
+    }
+    Err(format!("sid not found : {}", output.status))
+}
+pub fn filetime_to_datetime(filetime: u64) -> String {
+    let unix_ns = filetime.saturating_sub(116_444_736_000_000_000);
+    let unix_sec = (unix_ns / 10_000_000) as i64;
+    let unix_time = DateTime::from_timestamp(unix_sec, 0).unwrap();
+    unix_time
+        .with_timezone(&Local)
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string()
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrashFile {
+    name: String,
+    path: String,
+    deletation_time: String,
+    size: i64,
+    content_file: String,
+    original_path: String,
+}
+pub fn parse_i_trask_file(file: &str) -> anyhow::Result<TrashFile> {
+    match std::fs::read(file) {
+        Ok(content) => {
+            if content.len() < 0x18 {
+                return Err(anyhow!("File too small: {} bytes", content.len()));
+            }
+            let file_size = u64::from_le_bytes(content[0x08..0x10].try_into()?);
+            let delete_time = u64::from_le_bytes(content[0x10..0x18].try_into()?);
+            let dt = filetime_to_datetime(delete_time);
+
+            let file_name_bytes: Vec<u16> = content[0x1C..]
+                .chunks_exact(2)
+                .map(|c| u16::from_le_bytes([c[0], c[1]]))
+                .take_while(|&c| c != 0) // strip null terminator
+                .collect();
+
+            let file_path = String::from_utf16(&file_name_bytes)?
+                .to_string()
+                .nfc()
+                .collect::<String>();
+
+            let path = Path::new(&file);
+            let parent = path.parent().unwrap();
+            let file_name = Path::new(&file_path)
+                .file_name()
+                .unwrap_or(path.file_name().unwrap())
+                .to_string_lossy()
+                .to_string();
+
+            let content_file_name = parent.join(
+                path.file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace("$I", "$R"),
+            );
+            let trash_item = TrashFile {
+                name: file_name,
+                deletation_time: dt,
+                size: file_size as i64,
+                path: file.to_string(),
+                content_file: content_file_name.to_string_lossy().to_string(),
+                original_path: file_path,
+            };
+
+            Ok(trash_item)
+        }
+        Err(e) => Err(anyhow!("Error on parsing file {} : {}", &file, e)),
+    }
+}
+
+#[tauri::command]
+pub async fn load_trash_metadata(path_list: Vec<String>) -> Result<Vec<TrashFile>, String> {
+    let mut trash_list: Vec<TrashFile> = vec![];
+    for file in path_list {
+        match parse_i_trask_file(&file) {
+            Ok(trash_item) => trash_list.push(trash_item),
+            Err(e) => continue,
+        }
+    }
+
+    Ok(trash_list)
+}
+
+#[tauri::command]
+pub async fn get_trash_bin() -> Result<Vec<String>, String> {
+    let mut items: Vec<String> = vec![];
+    let mut disks: Vec<PathBuf> = vec![];
+    let os = std::env::consts::OS;
+    if os == "macos" {
+        let trask_dir = "./Trash";
+        disks.push(Path::new(trask_dir).to_path_buf());
+    } else if os == "windows" {
+        let recycle_bin = "$RECYCLE.BIN";
+        let sid = get_sid().map_err(|e| format!("Error on getting sid : {}", e))?;
+        disks = get_disk()
+            .map_err(|e| format!("Error on getting disk : {}", e))?
+            .into_iter()
+            .map(|disk| Path::new(&disk.mount_point).join(recycle_bin).join(&sid))
+            .collect();
+    }
+    for disk in disks {
+        println!("{:?}", &disk);
+        let mut trash_items: Vec<String> = WalkDir::new(&disk)
+            .max_depth(1)
+            .min_depth(1)
+            .into_iter()
+            .filter_map(|e| {
+                let entry = e.ok()?;
+                if entry
+                    .file_name()
+                    .to_string_lossy()
+                    .to_string()
+                    .starts_with("$I")
+                {
+                    Some(entry.path().to_string_lossy().to_string())
+                } else {
+                    None
+                }
+            })
+            .collect();
+        items.append(&mut trash_items);
+    }
+    Ok(items)
+}
+
 pub async fn generate_cancellation_token(
     task_id: &str,
     state: State<'_, AppState>,

@@ -10,8 +10,10 @@ import { useConfigStore } from './store/config.js';
 const { handleKeydown } = useKeyboard();
 import { ref } from 'vue';
 import TitleBar from './layout/TitleBar.vue';
+import { useMenuStore } from './store/menu.js';
 const modal = useModalStore();
 const config = useConfigStore();
+const menuStore = useMenuStore();
 config.init();
 onMounted(() => {
   //handle Alt+ left/right
@@ -25,7 +27,7 @@ onUnmounted(() => {
 <template>
   <TitleBar />
   <NavBar />
-  <main class="layout_main">
+  <main class="layout_main" @contextmenu.prevent="menuStore.handleContextMenu">
     <TheMain></TheMain>
     <!-- <button width="100%" type="button" @click="store.$reset()">Reset</button> -->
   </main>
