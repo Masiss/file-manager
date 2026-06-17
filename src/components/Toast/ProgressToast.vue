@@ -2,10 +2,14 @@
 import { listen } from '@tauri-apps/api/event';
 import Icon from '../Icon.vue';
 import { useToastStore } from '../../store/toast.js';
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 const toastStore = useToastStore();
 
 const props = defineProps(['data', 'pauseFn']);
+const hasTotal = computed(() => Number(props.data.total) > 0);
+const value = computed(() => Number(props.data.value) || 0);
+const total = computed(() => Number(props.data.total) || 0);
+const title = computed(() => props.data.title || props.data.name || 'Processing');
 onMounted(() => {
   listen('task-progressing', (event) => {
     let task_progress = event.payload;
@@ -17,10 +21,11 @@ onMounted(() => {
 <template>
   <div class="toast-body">
     <div class="toast-info">
-      <span>coping file apdasnfas to amasfasf </span>
+      <span>{{ title }}</span>
     </div>
     <div class="toast-progress">
-      <progress :value="props.data.value" :max="props.data.total"></progress>
+      <progress v-if="hasTotal" :value="value" :max="total"></progress>
+      <progress v-else></progress>
       <button class="toast_pause-button" @click="() => props.data.pauseFn?.()">
         <Icon icon="pause" icon-size="0.8rem" />
       </button>

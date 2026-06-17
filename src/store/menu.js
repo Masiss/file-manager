@@ -235,7 +235,7 @@ export const useMenuStore = defineStore('menu', () => {
   };
   const extract = async (dest, password) => {
     let taskId = crypto.randomUUID();
-    createProgressWindow();
+    await createProgressWindow();
     await invoke('extract', {
       taskInfo: {
         src_list: selectingItems.value.map((item) => item.dataset.path),
@@ -371,15 +371,18 @@ export const useMenuStore = defineStore('menu', () => {
   // };
   const createProgressWindow = async () => {
     let existed = await WebviewWindow.getByLabel('progress');
-    if (!existed) {
-      new WebviewWindow('progress', {
-        label: 'progress',
-        url: '../../../progress.html',
-        width: 400,
-        height: 250,
-      });
+    if (existed) {
+      return;
     }
-    await once('progresswindow-ready');
+
+    const ready = once('progresswindow-ready');
+    new WebviewWindow('progress', {
+      label: 'progress',
+      url: '../../../progress.html',
+      width: 400,
+      height: 250,
+    });
+    await ready;
     // await fn();
     return;
   };

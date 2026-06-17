@@ -1,7 +1,7 @@
 <script setup>
-import { computed, onMounted, ref, shallowRef, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useConfigStore } from './store/config.js';
-import { emitTo, listen, once } from '@tauri-apps/api/event';
+import { emitTo, listen } from '@tauri-apps/api/event';
 import ConflictProgress from './components/Progress/ConflictProgress.vue';
 import TaskProgress from './components/Progress/TaskProgress.vue';
 import { invoke } from '@tauri-apps/api/core';
@@ -10,27 +10,29 @@ const configStore = useConfigStore();
 configStore.init();
 const tasks = ref(new Map());
 
-listen('progress-conflict', (event) => {
-  console.log(event.payload);
-  tasks.value.set(event.payload.task_id, {
-    ...event.payload,
-    progress_type: 'conflict',
-  });
-});
-listen('progress-started');
-listen('task-progressing', (event) => {
-  let task = tasks.value.get(event.payload.task_id);
-  if (task) {
-    tasks.value.set(task.task_id, { ...task, ...event.payload });
-  } else {
+const listenersReady = Promise.all([
+  listen('progress-conflict', (event) => {
     tasks.value.set(event.payload.task_id, {
       ...event.payload,
-      progress_type: 'task',
+      progress_type: 'conflict',
     });
-  }
-  console.log(tasks.value);
-});
-onMounted(() => {
+  }),
+  listen('progress-started', () => {}),
+  listen('task-progressing', (event) => {
+    let task = tasks.value.get(event.payload.task_id);
+    if (task) {
+      tasks.value.set(task.task_id, { ...task, ...event.payload });
+    } else {
+      tasks.value.set(event.payload.task_id, {
+        ...event.payload,
+        progress_type: 'task',
+      });
+    }
+  }),
+]);
+
+onMounted(async () => {
+  await listenersReady;
   emitTo('main', 'progresswindow-ready');
 });
 const progressComponent = (progress_type) => {
@@ -48,7 +50,6 @@ const activeTask = computed(() =>
 watch(
   () => activeTask.value,
   () => {
-    console.log(activeTask.value);
     if (activeTask.value.length === 0) getCurrentWebviewWindow().close();
   },
 );
